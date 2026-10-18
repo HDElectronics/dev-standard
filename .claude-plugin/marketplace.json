@@ -1,0 +1,12 @@
+{
+  "name": "dev-standard",
+  "owner": { "name": "Ibrahim Khadraoui" },
+  "description": "dev-standard: an engineering standard that coding agents install, follow and can't quietly skip.",
+  "plugins": [
+    {
+      "name": "dev-standard",
+      "source": ".",
+      "description": "Hooks, /brainstorm, /pr and the standard-reviewer agent for repos that adopted dev-standard."
+    }
+  ]
+}

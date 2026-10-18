@@ -1,0 +1,19 @@
+{
+  "name": "dev-standard",
+  "version": "0.1.0",
+  "description": "Engineering standard for coding agents: brainstorm and Spec Kit gates, approval guards, no-bypass checks, auto-format, and a definition-of-done Stop hook. Active only in repos with .dev-standard.json.",
+  "keywords": [
+    "standards",
+    "spec-driven-development",
+    "code-review",
+    "hooks"
+  ],
+  "commands": "./templates/.claude/commands/",
+  "agents": [
+    "./templates/.claude/agents/standard-reviewer.md"
+  ],
+  "hooks": "./plugin/hooks.json",
+  "author": {
+    "name": "Ibrahim Khadraoui"
+  }
+}
