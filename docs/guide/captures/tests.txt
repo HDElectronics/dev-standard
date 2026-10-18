@@ -1,0 +1,6 @@
+$ python3 -m unittest discover -s tests
+Ran 34 tests in 1.977s
+
+OK
+$ claude plugin validate .
+✔ Validation passed with warnings

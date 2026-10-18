@@ -1,0 +1,557 @@
+<title>dev-standard Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,600;112,800&family=Public+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a field guide. Sticky section index on the left, one reading column; real screenshots
+   and real terminal captures sit inline with the text that explains them. Same identity as the
+   blueprint and the brainstorm board: Archivo display, Public Sans body, Plex Mono for IDs. */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --ink: #141922;
+  --muted: #5a6475;
+  --line: #d9dee7;
+  --accent: #2742c9;
+  --accent-soft: #e6eafb;
+  --must: #b4232f;
+  --must-soft: #fbe7e8;
+  --should: #9a5b00;
+  --should-soft: #fbf0dc;
+  --may: #1d6f63;
+  --may-soft: #dff3ef;
+  --code-bg: #eef1f6;
+  --term-bg: #10141b;
+  --term-fg: #d5dbe5;
+  --term-dim: #7d8899;
+  --term-cmd: #8fd19e;
+  --term-err: #ff8a8f;
+  --term-warn: #f2b864;
+  --term-rule: #a9b8ff;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1218; --surface: #161b23; --ink: #e5e9f0; --muted: #98a2b3; --line: #2a313d;
+    --accent: #8ea2ff; --accent-soft: #1d2442; --must: #ff8a8f; --must-soft: #3a1a1d;
+    --should: #f2b864; --should-soft: #35280f; --may: #6fd3c2; --may-soft: #12302b;
+    --code-bg: #1b212b; --term-bg: #0a0d12; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1218; --surface: #161b23; --ink: #e5e9f0; --muted: #98a2b3; --line: #2a313d;
+  --accent: #8ea2ff; --accent-soft: #1d2442; --must: #ff8a8f; --must-soft: #3a1a1d;
+  --should: #f2b864; --should-soft: #35280f; --may: #6fd3c2; --may-soft: #12302b;
+  --code-bg: #1b212b; --term-bg: #0a0d12; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; scroll-padding-top: 20px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.6; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code { font-family: var(--font-mono); font-size: 0.85em; background: var(--code-bg); padding: 0.08em 0.35em; border-radius: 4px; overflow-wrap: anywhere; }
+pre { margin: 0; overflow-x: auto; }
+h1, h2, h3, h4 { font-family: var(--font-display); font-stretch: 112%; margin: 0; line-height: 1.15; text-wrap: balance; }
+h1 { font-size: clamp(2.2rem, 5vw, 3.1rem); font-weight: 800; letter-spacing: -0.015em; }
+h2 { font-size: 1.6rem; font-weight: 800; }
+h3 { font-size: 1.2rem; font-weight: 600; }
+h4 { font-size: 1rem; font-weight: 600; }
+p { margin: 0; max-width: 44rem; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--font-mono); }
+
+.shell {
+  display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 48px; max-width: 1180px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+}
+.index { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; display: flex; flex-direction: column; gap: 1px; font-size: 0.8125rem; }
+.index .label { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-size: 0.6875rem; margin-bottom: 8px; }
+.index a { color: var(--muted); text-decoration: none; padding: 4px 8px; border-left: 2px solid var(--line); }
+.index a:hover { color: var(--ink); border-left-color: var(--accent); }
+main { min-width: 0; display: flex; flex-direction: column; gap: 72px; }
+section { display: flex; flex-direction: column; gap: 22px; }
+.sec-head { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 22px; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.sub { display: flex; flex-direction: column; gap: 12px; }
+
+/* Hero */
+.hero { display: flex; flex-direction: column; gap: 18px; }
+.hero h1 .dash { color: var(--accent); }
+.lede { font-size: 1.25rem; max-width: 40rem; }
+.start { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.start > div { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.start .k { font-family: var(--font-mono); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.cmd { position: relative; background: var(--term-bg); color: var(--term-fg); border-radius: var(--radius); padding: 14px 16px; font-family: var(--font-mono); font-size: 0.8125rem; line-height: 1.6; }
+.cmd pre { white-space: pre-wrap; overflow-wrap: anywhere; padding-right: 54px; }
+.cmd .p { color: var(--term-cmd); }
+.copy { position: absolute; top: 8px; right: 8px; font: 600 0.6875rem var(--font-body); color: var(--term-fg); background: transparent; border: 1px solid #3a4352; border-radius: 4px; padding: 3px 8px; cursor: pointer; }
+.stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.stats div { padding: 12px 14px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stats div:last-child { border-right: 0; }
+.stats b { font-family: var(--font-display); font-stretch: 112%; font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stats span { font-size: 0.8125rem; color: var(--muted); line-height: 1.3; }
+
+/* Layers */
+.layers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.layer { padding: 16px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.layer:last-child { border-right: 0; }
+.layer .tag { font-family: var(--font-mono); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.layer p { font-size: 0.875rem; color: var(--muted); }
+.meter { margin-top: auto; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); }
+
+.lvl { font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+.lvl.must { color: var(--must); background: var(--must-soft); }
+.lvl.should { color: var(--should); background: var(--should-soft); }
+.lvl.may { color: var(--may); background: var(--may-soft); }
+.rid { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+.prefix { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 500; color: var(--accent); background: var(--accent-soft); padding: 2px 7px; border-radius: 3px; }
+.file { font-size: 0.8125rem; color: var(--muted); }
+
+.anatomy { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.a-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; }
+.anatomy dl { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 0.9375rem; }
+.anatomy dt { font-family: var(--font-mono); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); padding-top: 3px; }
+.anatomy dd { margin: 0; min-width: 0; }
+
+/* Workflow */
+.phases { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; counter-reset: ph; }
+.phase { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; counter-increment: ph; }
+.phase::before { content: counter(ph, decimal-leading-zero); font-family: var(--font-mono); font-size: 0.6875rem; color: var(--accent); }
+.phase p { font-size: 0.875rem; color: var(--muted); }
+.phase ul { margin: 0; padding-left: 1rem; font-size: 0.8125rem; display: flex; flex-direction: column; gap: 2px; }
+.gate { color: var(--must); font-family: var(--font-mono); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+.viewer { display: flex; flex-direction: column; gap: 12px; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tabs button { font: 600 0.875rem var(--font-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 6px 14px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.shot { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.frame { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.frame-bar { display: flex; gap: 10px; align-items: center; padding: 7px 12px; border-bottom: 1px solid var(--line); background: var(--code-bg); font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); overflow-wrap: anywhere; }
+.frame img { display: block; width: 100%; height: auto; }
+.shot figcaption { font-size: 0.9375rem; color: var(--muted); max-width: 46rem; }
+.shot figcaption b { color: var(--ink); font-weight: 600; }
+
+.lanes { width: 100%; height: auto; display: block; }
+.lanes .main { stroke: var(--ink); stroke-width: 3; fill: none; }
+.lanes .br { stroke: var(--accent); stroke-width: 2.5; fill: none; }
+.lanes .dot { fill: var(--surface); stroke: var(--ink); stroke-width: 2.5; }
+.lanes .dot.b { stroke: var(--accent); }
+.lanes text { font-family: var(--font-mono); font-size: 12px; fill: var(--muted); }
+.lanes .strong { fill: var(--ink); font-weight: 500; }
+.lanes .tagbox { fill: var(--may-soft); stroke: var(--may); }
+.lanes .tagtext { fill: var(--may); font-weight: 500; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--font-mono); font-weight: 500; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); background: var(--code-bg); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.round { font-family: var(--font-display); font-stretch: 112%; font-weight: 800; font-size: 1.3rem; color: var(--accent); width: 3rem; }
+.when { display: block; font-size: 0.8125rem; color: var(--muted); }
+.qs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.qs .q { display: block; color: var(--muted); font-size: 0.875rem; }
+.out { font-family: var(--font-mono); font-size: 0.75rem; white-space: nowrap; }
+.out.block { color: var(--must); }
+.out.ask { color: var(--should); }
+.out.fix { color: var(--may); }
+
+/* Terminals */
+.term { background: var(--term-bg); color: var(--term-fg); border-radius: var(--radius); padding: 14px 16px; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.55; }
+.term code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; color: inherit; }
+.t-cmd { color: var(--term-cmd); }
+.t-err { color: var(--term-err); font-weight: 500; }
+.t-warn { color: var(--term-warn); font-weight: 500; }
+.t-rule { color: var(--term-rule); }
+.t-ok { color: var(--term-cmd); }
+.t-exit { display: inline-block; margin-top: 4px; padding: 0 6px; border-radius: 3px; font-size: 0.6875rem; }
+.t-exit.bad { color: var(--term-bg); background: var(--term-err); }
+.t-exit.ok { color: var(--term-bg); background: var(--term-cmd); }
+.terms { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.terms > div { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.terms .wide { grid-column: 1 / -1; }
+.cap { font-size: 0.875rem; color: var(--muted); }
+.cap b { color: var(--ink); font-weight: 600; }
+
+.chat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.chat .who { font-family: var(--font-mono); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.chat .opt { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr); gap: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 5px; font-size: 0.9375rem; }
+.chat .opt.rec { border-color: var(--accent); background: var(--accent-soft); }
+.chat .opt span:first-child { font-family: var(--font-mono); color: var(--accent); }
+
+/* Catalog */
+.cat { display: flex; flex-direction: column; gap: 12px; }
+.cat + .cat { margin-top: 18px; }
+.cat-head { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
+.cat-head p { color: var(--muted); font-size: 0.9375rem; }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.gcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; scroll-margin-top: 20px; }
+.gtop { display: flex; gap: 10px; align-items: baseline; }
+.gmeta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.applies { font-size: 0.75rem; color: var(--muted); font-family: var(--font-mono); }
+.based { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: baseline; font-size: 0.8125rem; }
+.based .k { font-family: var(--font-mono); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-right: 2px; }
+.based a, .based .src { border: 1px solid var(--line); border-radius: 3px; padding: 0 6px; text-decoration: none; color: var(--ink); }
+.based a:hover { border-color: var(--accent); color: var(--accent); }
+details summary { cursor: pointer; font-weight: 600; font-size: 0.875rem; color: var(--accent); }
+.rules { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; }
+.rules li { display: grid; grid-template-columns: 4.6rem 5.3rem minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 6px 0; border-top: 1px solid var(--line); font-size: 0.875rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font-family: var(--font-mono); font-size: 0.6875rem; color: var(--accent); background: var(--accent-soft); padding: 1px 6px; border-radius: 3px; text-decoration: none; }
+
+.tree { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.55; }
+.links { display: flex; flex-wrap: wrap; gap: 10px; }
+.links a { font-weight: 600; text-decoration: none; border: 1px solid var(--line); background: var(--surface); padding: 8px 14px; border-radius: var(--radius); }
+.links a:hover { border-color: var(--accent); }
+footer { font-size: 0.8125rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+
+@media (max-width: 960px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-block: 24px 60px; }
+  .index { position: static; flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 6px; }
+  .index .label { display: none; }
+  .index a { border: 1px solid var(--line); border-radius: 14px; white-space: nowrap; padding: 4px 10px; }
+  .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .stats div:nth-child(3) { border-right: 0; }
+  .stats div:nth-child(-n+3) { border-bottom: 1px solid var(--line); }
+  .layers, .phases { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .layer:nth-child(2) { border-right: 0; }
+  .layer:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .start, .terms, .cards { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 540px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats div { border-right: 0; border-bottom: 1px solid var(--line); }
+  .stats div:nth-child(odd) { border-right: 1px solid var(--line); }
+  .stats div:nth-last-child(-n+2) { border-bottom: 0; }
+  .layers, .phases { grid-template-columns: minmax(0, 1fr); }
+  .layer { border-right: 0 !important; border-bottom: 1px solid var(--line); }
+  .layer:last-child { border-bottom: 0; }
+  .rules li { grid-template-columns: 4.6rem minmax(0, 1fr); }
+  .rules li span:last-child { grid-column: 1 / -1; }
+  .anatomy dl { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+
+<div class="shell">
+  <nav class="index" aria-label="Sections">
+    <div class="label">Guide</div>
+    <a href="#top">Start</a>
+    <a href="#how">How it works</a>
+    <a href="#workflow">Workflow</a>
+    <a href="#enforce">Enforcement</a>
+    <a href="#install">Install</a>
+    <a href="#catalog">Rule catalog</a>
+    <a href="#sources">Standards used</a>
+    <a href="#stack">Stack and repo</a>
+  </nav>
+
+  <main>
+    <header class="hero" id="top">
+      <div class="eyebrow">Version {{VERSION}} · github.com/HDElectronics/dev-standard</div>
+      <h1>dev<span class="dash">-</span>standard</h1>
+      <p class="lede">An engineering standard that your coding agent installs, follows, and can't quietly skip.</p>
+      <p class="muted">Every rule has an ID, an RFC 2119 level, the published standard it comes from, and the hook or CI check that enforces it. The rules are adopted from Google's engineering practices, GitHub Spec Kit, OWASP, IETF RFCs, NIST and Google SRE rather than invented.</p>
+      <div class="start">
+        <div>
+          <span class="k">Claude Code, with the plugin</span>
+          <div class="cmd"><pre><span class="p">/plugin marketplace add HDElectronics/dev-standard</span>
+<span class="p">/plugin install dev-standard@dev-standard</span>
+<span class="p">/dev-standard:install</span></pre><button class="copy" type="button" data-copy="/plugin marketplace add HDElectronics/dev-standard&#10;/plugin install dev-standard@dev-standard&#10;/dev-standard:install">Copy</button></div>
+        </div>
+        <div>
+          <span class="k">Any coding agent</span>
+          <div class="cmd"><pre>Install dev-standard from https://github.com/HDElectronics/dev-standard by following its INSTALL.md.</pre><button class="copy" type="button" data-copy="Install dev-standard from https://github.com/HDElectronics/dev-standard by following its INSTALL.md.">Copy</button></div>
+        </div>
+      </div>
+      <div class="stats" aria-label="Counts from the repository">
+        <div><b>{{N_RULES}}</b><span>rules</span></div>
+        <div><b>{{N_GROUPS}}</b><span>rule groups</span></div>
+        <div><b>{{N_SOURCES}}</b><span>published standards cited</span></div>
+        <div><b>{{N_HOOKS}}</b><span>agent hooks</span></div>
+        <div><b>{{N_CHECKS}}</b><span>CI checks</span></div>
+        <div><b>{{N_TESTS}}</b><span>tests</span></div>
+      </div>
+    </header>
+
+    <section id="how">
+      <div class="sec-head"><span class="eyebrow">How it works</span><h2>Written rules, then checks that run anyway</h2></div>
+      <p>An agent follows written instructions most of the time. dev-standard makes "most of the time" into "every time" with four layers, from soft to hard. A rule with no automated check is labeled advisory, so the list of MUST rules stays honest.</p>
+      <div class="layers">
+        <div class="layer"><span class="tag">Layer 1</span><h4>Instruct</h4><p><code>AGENTS.md</code> carries the MUST rules as one-liners. The full rules live in <code>.dev-standard/standards/</code>.</p><div class="meter"><i style="width:25%"></i></div></div>
+        <div class="layer"><span class="tag">Layer 2</span><h4>Guide</h4><p><code>/brainstorm</code>, Spec Kit commands, <code>/pr</code> and templates make the right shape the easy path.</p><div class="meter"><i style="width:50%"></i></div></div>
+        <div class="layer"><span class="tag">Layer 3</span><h4>Enforce</h4><p>Claude Code hooks block the action or fix it as it happens. Git hooks catch the rest locally.</p><div class="meter"><i style="width:78%"></i></div></div>
+        <div class="layer"><span class="tag">Layer 4</span><h4>Verify</h4><p><code>dev-standard check</code> in CI, security scans, rulesets on <code>main</code>, and a reviewer agent.</p><div class="meter"><i style="width:100%"></i></div></div>
+      </div>
+      <div class="sub">
+        <h3>Anatomy of a rule</h3>
+        <p class="muted">Every rule follows the same shape, so people, agents and tools read it the same way. This one is taken straight from the standard:</p>
+        <!--ANATOMY-->
+        <p class="muted">Levels follow RFC 2119. A MUST rule blocks at its group's enforcement level; a SHOULD rule warns; a MAY rule is guidance. Each repo sets a level per group (<code>block</code>, <code>warn</code>, <code>off</code>) in <code>.dev-standard.json</code>, and records approved exceptions there as waivers with an expiry date.</p>
+      </div>
+    </section>
+
+    <section id="workflow">
+      <div class="sec-head"><span class="eyebrow">Workflow</span><h2>From idea to merged code</h2></div>
+      <p>Every feature passes through the same four stages. The red gates are decisions that only a person can make; hooks stop the agent from making them on its own.</p>
+      <div class="phases">
+        <div class="phase"><h4>Brainstorm</h4><p>Find the right problem and direction.</p><ul><li>Frame, diverge, converge</li><li>Decide <span class="gate">gate</span></li></ul></div>
+        <div class="phase"><h4>Specify</h4><p>GitHub Spec Kit, used as is.</p><ul><li>Specify, Clarify <span class="gate">gate</span></li><li>Plan, Tasks, Analyze</li></ul></div>
+        <div class="phase"><h4>Ship</h4><p>One task per short-lived branch.</p><ul><li>Implement test first</li><li>Verify <span class="gate">gate</span>, PR, review</li></ul></div>
+        <div class="phase"><h4>Remember</h4><p>Decisions outlive the chat.</p><ul><li>ADRs in <code>docs/adr/</code></li><li>Accepted by a person <span class="gate">gate</span></li></ul></div>
+      </div>
+
+      <div class="sub">
+        <h3>The brainstorm board</h3>
+        <p class="muted"><code>/brainstorm &lt;slug&gt; "problem"</code> copies this board into <code>brainstorms/&lt;slug&gt;/</code> and fills in only its data. You work it in a browser, then export <code>brainstorm.md</code>, which becomes the input for the spec. The screenshots show the board's built-in example.</p>
+        <div class="viewer">
+          <div class="tabs" role="tablist" aria-label="Board stages">
+            <button type="button" role="tab" id="t-frame" aria-controls="s-frame" aria-selected="true">1 · Frame</button>
+            <button type="button" role="tab" id="t-diverge" aria-controls="s-diverge" aria-selected="false">2 · Diverge</button>
+            <button type="button" role="tab" id="t-converge" aria-controls="s-converge" aria-selected="false">3 · Converge</button>
+            <button type="button" role="tab" id="t-decide" aria-controls="s-decide" aria-selected="false">4 · Decide</button>
+          </div>
+          <figure class="shot" id="s-frame" role="tabpanel" aria-labelledby="t-frame">
+            <div class="frame"><div class="frame-bar">brainstorms/faster-restock/brainstorm.html</div><img src="img/brainstorm-frame.png" alt="Frame stage: the problem with evidence, a How-might-we question, users, success signal, constraints and appetite." width="1800" height="1463"></div>
+            <figcaption><b>Frame.</b> State the problem with evidence, turn it into one "How might we" question, and set the appetite (how much time it's worth) before any solution is scored. Appetite comes from Basecamp's Shape Up.</figcaption>
+          </figure>
+          <figure class="shot" id="s-diverge" role="tabpanel" aria-labelledby="t-diverge" hidden>
+            <div class="frame"><div class="frame-bar">brainstorms/faster-restock/brainstorm.html</div><img src="img/brainstorm-diverge.png" alt="Diverge stage: seven idea cards, including a do-nothing baseline, and a form to add your own idea." width="1800" height="1515" loading="lazy"></div>
+            <figcaption><b>Diverge.</b> The agent proposes at least five different options, always including a do-nothing baseline (BRN-002). You add your own. Nothing is judged yet: this is the first half of the Double Diamond.</figcaption>
+          </figure>
+          <figure class="shot" id="s-converge" role="tabpanel" aria-labelledby="t-converge" hidden>
+            <div class="frame"><div class="frame-bar">brainstorms/faster-restock/brainstorm.html</div><img src="img/brainstorm-converge.png" alt="Converge stage: a scoring table with dots, impact, effort and confidence, an impact versus effort matrix, and an ICE ranking." width="1800" height="1290" loading="lazy"></div>
+            <figcaption><b>Converge.</b> Dot voting from the GV Design Sprint, then an ICE score (impact × confidence × ease) for each idea, plotted on an impact/effort matrix so quick wins stand out.</figcaption>
+          </figure>
+          <figure class="shot" id="s-decide" role="tabpanel" aria-labelledby="t-decide" hidden>
+            <div class="frame"><div class="frame-bar">brainstorms/faster-restock/brainstorm.html</div><img src="img/brainstorm-decide.png" alt="Decide stage: one direction chosen, a reason, a reason for each rejected idea, and a live preview of brainstorm.md with export buttons." width="1800" height="1590" loading="lazy"></div>
+            <figcaption><b>Decide.</b> You pick the direction and say why, and every rejected idea gets a reason that later becomes a non-goal in the spec. Only you can record this decision; a hook blocks the agent from writing it (BRN-004).</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="sub">
+        <h3>Branches: trunk-based, one task per branch</h3>
+        <p class="muted">The spec documents merge to <code>main</code> first. Each task then gets its own branch from the latest <code>main</code>, merged within three days. Unfinished features ship behind a flag that defaults to off, and releases are tags on <code>main</code> (BRA-001 to BRA-006).</p>
+        <div class="frame" style="padding:12px 8px">
+          <svg class="lanes" viewBox="0 0 760 190" role="img" aria-label="main with a spec branch and two task branches merging back, then a release tag">
+            <path class="main" d="M20 140 H740"></path>
+            <path class="br" d="M70 140 C 100 140, 100 60, 130 60 H 190 C 220 60, 220 140, 250 140"></path>
+            <path class="br" d="M250 140 C 280 140, 280 60, 310 60 H 370 C 400 60, 400 140, 430 140"></path>
+            <path class="br" d="M430 140 C 460 140, 460 60, 490 60 H 550 C 580 60, 580 140, 610 140"></path>
+            <circle class="dot" cx="70" cy="140" r="6"></circle><circle class="dot" cx="250" cy="140" r="6"></circle><circle class="dot" cx="430" cy="140" r="6"></circle><circle class="dot" cx="610" cy="140" r="6"></circle>
+            <circle class="dot b" cx="160" cy="60" r="5"></circle><circle class="dot b" cx="340" cy="60" r="5"></circle><circle class="dot b" cx="520" cy="60" r="5"></circle>
+            <text class="strong" x="160" y="38" text-anchor="middle">013-faster-restock</text><text x="160" y="22" text-anchor="middle">spec docs PR</text>
+            <text class="strong" x="340" y="38" text-anchor="middle">013-t001-bom-parser</text><text x="340" y="22" text-anchor="middle">task PR, flag off</text>
+            <text class="strong" x="520" y="38" text-anchor="middle">013-t002-paste-box</text><text x="520" y="22" text-anchor="middle">task PR, flag on</text>
+            <text class="strong" x="24" y="168">main</text>
+            <rect class="tagbox" x="660" y="126" width="72" height="26" rx="4"></rect><text class="tagtext" x="696" y="143" text-anchor="middle">v1.5.0</text>
+            <text x="250" y="168" text-anchor="middle">squash</text><text x="430" y="168" text-anchor="middle">squash</text><text x="610" y="168" text-anchor="middle">squash</text>
+          </svg>
+        </div>
+        <p class="muted"><code>main</code> is protected by GitHub rulesets kept in the repo: pull request, a human approval of the latest push, required checks on an up-to-date branch, code-owner review of the files that define the rules, no force pushes, no bypass.</p>
+      </div>
+
+      <div class="sub">
+        <h3>The decision log</h3>
+        <p class="muted">Significant decisions (framework, database, auth, deploy target, major dependencies) are recorded as Architecture Decision Records in <code>docs/adr/</code>, in MADR format. The agent drafts them as <code>proposed</code>; only you set <code>accepted</code>. Accepted records are never rewritten: a new one supersedes them. Before proposing a design, the agent reads the accepted ADRs for that area and can't contradict one without proposing a replacement (ADR-008).</p>
+      </div>
+    </section>
+
+    <section id="enforce">
+      <div class="sec-head"><span class="eyebrow">Enforcement</span><h2>What happens when the agent cuts a corner</h2></div>
+      <p>Six Claude Code hooks run on the agent's own actions. A blocked action returns the rule ID and the fix, so the agent can correct itself. The captures below are real output from the hooks, run against a demo repo.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Hook</th><th>When</th><th>Rules</th><th>What it does</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td><code>guard-approvals</code></td><td>Edit, Write</td><td class="rid">BRN-004 SDD-001 ADR-005</td><td>Stops the agent from recording a brainstorm decision, approving a spec, or accepting an ADR.</td><td class="out block">blocks</td></tr>
+            <tr><td><code>require-brainstorm</code></td><td>Edit, Write</td><td class="rid">BRN-001</td><td>No spec until its brainstorm is decided.</td><td class="out block">blocks</td></tr>
+            <tr><td><code>require-spec</code></td><td>Edit, Write</td><td class="rid">SDD-001</td><td>No source edits on a feature branch until you approve the spec. Tests and docs stay open.</td><td class="out block">blocks</td></tr>
+            <tr><td><code>no-bypass</code></td><td>Bash</td><td class="rid">AGT-002 GIT-005 BRA-011 SEC-005</td><td>Blocks <code>--no-verify</code>, commits and force pushes on <code>main</code>, and <code>--admin</code> merges. Asks you before <code>rm -rf</code>, <code>reset --hard</code>, <code>DROP</code> or ruleset changes.</td><td class="out ask">blocks or asks</td></tr>
+            <tr><td><code>format-file</code></td><td>after Edit, Write</td><td class="rid">STY-001</td><td>Formats each file the agent writes with ruff, Biome or clang-format.</td><td class="out fix">fixes</td></tr>
+            <tr><td><code>definition-of-done</code></td><td>Stop</td><td class="rid">AGT-003</td><td>Runs the fast checks before the agent finishes. Blocks up to three times, then lets it stop and report the failure.</td><td class="out block">blocks</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="terms">
+        <div><span class="cap"><b>Editing code before the spec is approved</b></span><!--TERM:hook-spec--></div>
+        <div><span class="cap"><b>Writing a spec without a decided brainstorm</b></span><!--TERM:hook-brainstorm--></div>
+        <div><span class="cap"><b>Approving its own spec</b></span><!--TERM:hook-approve--></div>
+        <div><span class="cap"><b>Skipping git hooks, merging past protection</b></span><!--TERM:hook-bypass--></div>
+        <div class="wide"><span class="cap"><b>Trying to finish while a test fails</b>: the Stop hook sends the failure back to the agent</span><!--TERM:hook-dod--></div>
+      </div>
+
+      <div class="sub">
+        <h3>CI checks the hooks can't see</h3>
+        <p class="muted"><code>dev-standard check</code> is one dependency-free Python script. In CI it reads the pull request, the diff and <code>.dev-standard.json</code>, and reports each finding at its group's level, so warnings never fail the build and blocking findings always do.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Check</th><th>Rules</th><th>Catches</th></tr></thead>
+            <tbody>
+              <tr><td><code>manifest</code></td><td class="rid">INS</td><td>Invalid <code>.dev-standard.json</code>, incomplete or expired waivers</td></tr>
+              <tr><td><code>branch</code></td><td class="rid">BRA-003</td><td>Branch names outside the convention</td></tr>
+              <tr><td><code>spec</code></td><td class="rid">SDD-001</td><td>Source changes on a spec branch before approval; missing status line</td></tr>
+              <tr><td><code>brainstorm</code></td><td class="rid">BRN-001</td><td>A new spec with no decided brainstorm</td></tr>
+              <tr><td><code>trace</code></td><td class="rid">SDD-003</td><td>Requirements of an implemented spec that no test references</td></tr>
+              <tr><td><code>adr</code></td><td class="rid">ADR-002 ADR-004 ADR-007</td><td>Bad file names, reused numbers, invalid status, index out of sync</td></tr>
+              <tr><td><code>pr</code></td><td class="rid">PR-001 PR-003</td><td>Non-conventional title; missing or empty description sections</td></tr>
+              <tr><td><code>docs</code></td><td class="rid">DOC-007</td><td>A feature that changes code but no docs</td></tr>
+              <tr><td><code>deps</code></td><td class="rid">SEC-004 UI-002 AUTH-001</td><td>Unexplained new dependencies, banned UI libraries without an ADR, low-level crypto</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <span class="cap"><b>A pull request that breaks several rules at once</b> (real output against the demo repo)</span>
+        <!--TERM:cli-->
+        <span class="cap"><b>dev-standard tests itself</b>: the hooks and every check run against throwaway git repos</span>
+        <!--TERM:tests-->
+      </div>
+    </section>
+
+    <section id="install">
+      <div class="sec-head"><span class="eyebrow">Install</span><h2>An interview, not a script</h2></div>
+      <p>The agent installs dev-standard by studying your repo and asking you about what it can't work out alone. Every question comes with a recommendation and the evidence behind it. Nothing changes until you approve the plan, and your existing code keeps its conventions: the standard applies to new and changed code.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Round</th><th>Stage</th><th>Questions the agent may ask</th></tr></thead>
+          <tbody>
+            <!--ROUNDS-->
+          </tbody>
+        </table>
+      </div>
+      <p class="muted">The agent skips any question your repo already answers. In Claude Code the questions arrive as multiple-choice prompts, four at a time; other agents ask them in chat. Here is one, word for word from <code>install/interview.md</code>:</p>
+      <div class="chat" aria-label="Example question">
+        <span class="who">Agent · Q-SCOPE-3 · Strictness</span>
+        <strong>How strict should the checks be at first?</strong>
+        <div class="opt rec"><span>a</span><span><b>Gradual (recommended for an existing repo).</b> Workflow gates (AGT, BRN, SDD, GIT, BRA) block now; everything else warns until it's green.</span></div>
+        <div class="opt"><span>b</span><span><b>Strict (recommended for a new repo).</b> Everything blocks from day one.</span></div>
+        <div class="opt"><span>c</span><span><b>Advisory.</b> Everything only warns.</span></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Mode</th><th>What the agent asks</th></tr></thead>
+          <tbody>
+            <tr><td><b>Guided</b></td><td>Every question that applies to your repo.</td></tr>
+            <tr><td><b>Quick</b></td><td>Only conflicts that would change existing code, questions without a clear recommendation, the plan approval, and every action outside the repo. Everything else takes the recommendation and is logged as assumed.</td></tr>
+            <tr><td><b>Report only</b></td><td>Studies the repo and writes the adoption report. Nothing else changes.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="sub">
+        <h3>What lands in your repo</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Path</th><th>Purpose</th><th>How</th></tr></thead>
+            <tbody>
+              <tr><td><code>.dev-standard/</code></td><td>This repository, pinned to a release</td><td>git submodule</td></tr>
+              <tr><td><code>.dev-standard.json</code></td><td>Version, profiles, enforcement levels, waivers</td><td>new file</td></tr>
+              <tr><td><code>AGENTS.md</code>, <code>CLAUDE.md</code></td><td>MUST rules, workflow, your repo's own conventions</td><td>marked block, merged</td></tr>
+              <tr><td><code>.claude/</code></td><td>Hooks, <code>/brainstorm</code>, <code>/pr</code>, reviewer agent</td><td>merged (skipped when you use the plugin)</td></tr>
+              <tr><td><code>.specify/</code></td><td>GitHub Spec Kit with dev-standard's template additions</td><td><code>specify init</code>, then merged</td></tr>
+              <tr><td><code>.github/</code></td><td>PR template, CI job, rulesets, CODEOWNERS</td><td>merged</td></tr>
+              <tr><td><code>docs/adr/</code></td><td>Decision log, template and index</td><td>new, unless you already keep one</td></tr>
+              <tr><td><code>docs/dev-standard/adoption-report.md</code></td><td>Every finding, question, answer and change</td><td>new file</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted">Every answer is logged in the adoption report, so an interrupted install picks up where it stopped. The whole install happens on a <code>chore/adopt-dev-standard</code> branch; to back out, delete that branch.</p>
+      </div>
+    </section>
+
+    <section id="catalog">
+      <div class="sec-head"><span class="eyebrow">Rule catalog</span><h2>All {{N_RULES}} rules, by group</h2></div>
+      <p>Generated from the files in <code>standards/</code>. Open a group to see its rules; each rule's full text, reason and check are in its source file.</p>
+      <!--CATALOG-->
+    </section>
+
+    <section id="sources">
+      <div class="sec-head"><span class="eyebrow">Standards used</span><h2>Built on {{N_SOURCES}} published standards</h2></div>
+      <p>Every source a rule group cites, most widely used first. The chips link to the groups that adopt it.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Standard</th><th>Used by</th></tr></thead>
+          <tbody>
+            <!--SOURCES-->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="stack">
+      <div class="sec-head"><span class="eyebrow">Stack and repo</span><h2>Defaults and layout</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Layer</th><th>Default</th><th>Change it with</th></tr></thead>
+          <tbody>
+            <tr><td>Backend</td><td>FastAPI, Python 3.12+, uv, Pydantic v2, SQLAlchemy 2 and Alembic</td><td><code>python-api</code> profile</td></tr>
+            <tr><td>Frontend</td><td>React and TypeScript on Vite (Next.js only for SEO), Tailwind, shadcn/ui, lucide-react, Recharts</td><td>an ADR (UI-002)</td></tr>
+            <tr><td>Auth</td><td>Keycloak over OIDC, with FastAPI holding an HttpOnly session for the browser</td><td>an ADR (AUTH-001)</td></tr>
+            <tr><td>Deploy</td><td>Containers (Dockerfile and compose); target chosen before the first deploy</td><td>an ADR (OPS-001)</td></tr>
+            <tr><td>Agents</td><td>Claude Code first; <code>AGENTS.md</code> for every other agent</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="tree">dev-standard/
+├── INSTALL.md               the runbook the agent follows
+├── install/interview.md     the questions it asks, and what each answer changes
+├── standards/               the rules, one file per group
+├── templates/               files merged into your repo
+├── profiles/                base, python-api, react-web config fragments
+├── enforce/hooks/           the Claude Code hooks
+├── cli/dev-standard         the CI checks
+├── .claude-plugin/          plugin and marketplace
+├── tests/                   tests for the hooks and the CLI
+└── docs/adr/                dev-standard's own decision log</pre>
+      <div class="links">
+        <a href="https://github.com/HDElectronics/dev-standard">Repository on GitHub</a>
+        <a href="https://claude.ai/artifact/XAT5anJJD9PpjND8CLMjqd">Try the brainstorm board</a>
+      </div>
+      <footer>Generated by <code>docs/guide/build.py</code> from the repository's own files. Rule counts, the catalog, the source index, the interview rounds and the terminal output all come from the repo, so rebuilding the page keeps it current.</footer>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs [role="tab"]'));
+  function select(tab) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute("aria-selected", String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+    });
+  }
+  tabs.forEach(function (tab, i) {
+    tab.tabIndex = i === 0 ? 0 : -1;
+    tab.addEventListener("click", function () { select(tab); });
+    tab.addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      var next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+      next.focus(); select(next);
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".copy"), function (button) {
+    button.addEventListener("click", function () {
+      var text = button.getAttribute("data-copy");
+      function done(label) { button.textContent = label; setTimeout(function () { button.textContent = "Copy"; }, 1600); }
+      function fallback() {
+        var range = document.createRange();
+        range.selectNodeContents(button.parentNode.querySelector("pre"));
+        var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+        done("Press Ctrl+C");
+      }
+      try { navigator.clipboard.writeText(text).then(function () { done("Copied"); }, fallback); }
+      catch (e) { fallback(); }
+    });
+  });
+})();
+</script>

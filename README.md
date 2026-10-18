@@ -62,6 +62,7 @@ no finishing while checks fail.
 
 | Path | Contents |
 |------|----------|
+| [docs/guide/](docs/guide/index.html) | The illustrated guide: workflow, screenshots, real hook and CI output, install, full rule catalog. Open `docs/guide/index.html` in a browser; rebuild with `python3 docs/guide/build.py` |
 | [INSTALL.md](INSTALL.md) | Runbook an agent follows to adopt the standard |
 | [install/interview.md](install/interview.md) | The questions the agent asks during install, and what each answer changes |
 | [standards/](standards/README.md) | The rules, one file per group |

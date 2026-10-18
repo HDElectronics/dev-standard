@@ -1,0 +1,14 @@
+$ dev-standard check --base main --title "Added BOM stuff" --body-file pr.md
+ERROR   SDD-001   app/main.py: Source changed on branch 013-faster-restock, but spec 013 is not approved.
+ERROR   BRN-001   specs/013-faster-restock/spec.md: New spec without a decided brainstorm.md next to it.
+ERROR   ADR-007   docs/adr/README.md: Index says 'proposed' for ADR-0001, the file says 'accepted'.
+ERROR   ADR-007   docs/adr/README.md: 0002-use-keycloak.md is not listed in the index.
+ERROR   PR-001    PR title 'Added BOM stuff' is not a Conventional Commit line, e.g. 'feat(cart): match pasted BOM lines'.
+ERROR   PR-003    PR section '## Spec' is empty. Write 'None' if there is nothing to say.
+ERROR   PR-003    PR description is missing the section '## How I tested'.
+ERROR   PR-003    PR description is missing the section '## Risk and rollback'.
+ERROR   PR-003    PR description is missing the section '## Follow-ups (out of scope)'.
+ERROR   PR-003    PR description is missing the section '## Self-review'.
+ERROR   UI-002    package.json: New UI library `@mui/material` needs an ADR, referenced in the PR.
+WARNING SEC-004   package.json: New dependency `@mui/material`: justify it in the PR (purpose, size, license, maintenance).
+[exit 1]

@@ -1,0 +1,5 @@
+$ # agent tries: Edit app/main.py
+SDD-001: spec 013 is not approved, so source files can't be edited on branch 013-faster-restock yet.
+Finish /speckit.clarify, then ask the user to set '**Status**: Approved' in specs/013-*/spec.md.
+Tests and docs can still be written. Rule: .dev-standard/standards/sdd.md
+[exit 2]

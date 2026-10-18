@@ -1,0 +1,5 @@
+$ # agent tries: Write specs/013-faster-restock/spec.md
+BRN-001: specs/013-faster-restock has no decided brainstorm.md, so the spec can't be written yet.
+Run /brainstorm <slug> "problem" and let the user decide on the board.
+Bug fixes and chores use fix/ or chore/ branches and need no brainstorm. Rule: .dev-standard/standards/brainstorm.md
+[exit 2]

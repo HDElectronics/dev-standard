@@ -1,0 +1,4 @@
+$ # agent tries: Edit spec.md → "**Status**: Approved"
+SDD-001: only the user approves a spec. Keep '**Status**: Draft' and ask the user to approve it.
+If you are changing an approved spec, set it back to Draft and run /speckit.clarify (SDD-006).
+[exit 2]

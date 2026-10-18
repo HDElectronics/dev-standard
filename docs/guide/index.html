@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>dev-standard Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,600;112,800&family=Public+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a field guide. Sticky section index on the left, one reading column; real screenshots
+   and real terminal captures sit inline with the text that explains them. Same identity as the
+   blueprint and the brainstorm board: Archivo display, Public Sans body, Plex Mono for IDs. */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --ink: #141922;
+  --muted: #5a6475;
+  --line: #d9dee7;
+  --accent: #2742c9;
+  --accent-soft: #e6eafb;
+  --must: #b4232f;
+  --must-soft: #fbe7e8;
+  --should: #9a5b00;
+  --should-soft: #fbf0dc;
+  --may: #1d6f63;
+  --may-soft: #dff3ef;
+  --code-bg: #eef1f6;
+  --term-bg: #10141b;
+  --term-fg: #d5dbe5;
+  --term-dim: #7d8899;
+  --term-cmd: #8fd19e;
+  --term-err: #ff8a8f;
+  --term-warn: #f2b864;
+  --term-rule: #a9b8ff;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1218; --surface: #161b23; --ink: #e5e9f0; --muted: #98a2b3; --line: #2a313d;
+    --accent: #8ea2ff; --accent-soft: #1d2442; --must: #ff8a8f; --must-soft: #3a1a1d;
+    --should: #f2b864; --should-soft: #35280f; --may: #6fd3c2; --may-soft: #12302b;
+    --code-bg: #1b212b; --term-bg: #0a0d12; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1218; --surface: #161b23; --ink: #e5e9f0; --muted: #98a2b3; --line: #2a313d;
+  --accent: #8ea2ff; --accent-soft: #1d2442; --must: #ff8a8f; --must-soft: #3a1a1d;
+  --should: #f2b864; --should-soft: #35280f; --may: #6fd3c2; --may-soft: #12302b;
+  --code-bg: #1b212b; --term-bg: #0a0d12; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; scroll-padding-top: 20px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.6; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code { font-family: var(--font-mono); font-size: 0.85em; background: var(--code-bg); padding: 0.08em 0.35em; border-radius: 4px; overflow-wrap: anywhere; }
+pre { margin: 0; overflow-x: auto; }
+h1, h2, h3, h4 { font-family: var(--font-display); font-stretch: 112%; margin: 0; line-height: 1.15; text-wrap: balance; }
+h1 { font-size: clamp(2.2rem, 5vw, 3.1rem); font-weight: 800; letter-spacing: -0.015em; }
+h2 { font-size: 1.6rem; font-weight: 800; }
+h3 { font-size: 1.2rem; font-weight: 600; }
+h4 { font-size: 1rem; font-weight: 600; }
+p { margin: 0; max-width: 44rem; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--font-mono); }
+
+.shell {
+  display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 48px; max-width: 1180px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+}
+.index { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; display: flex; flex-direction: column; gap: 1px; font-size: 0.8125rem; }
+.index .label { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-size: 0.6875rem; margin-bottom: 8px; }
+.index a { color: var(--muted); text-decoration: none; padding: 4px 8px; border-left: 2px solid var(--line); }
+.index a:hover { color: var(--ink); border-left-color: var(--accent); }
+main { min-width: 0; display: flex; flex-direction: column; gap: 72px; }
+section { display: flex; flex-direction: column; gap: 22px; }
+.sec-head { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 22px; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.sub { display: flex; flex-direction: column; gap: 12px; }
+
+/* Hero */
+.hero { display: flex; flex-direction: column; gap: 18px; }
+.hero h1 .dash { color: var(--accent); }
+.lede { font-size: 1.25rem; max-width: 40rem; }
+.start { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.start > div { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.start .k { font-family: var(--font-mono); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.cmd { position: relative; background: var(--term-bg); color: var(--term-fg); border-radius: var(--radius); padding: 14px 16px; font-family: var(--font-mono); font-size: 0.8125rem; line-height: 1.6; }
+.cmd pre { white-space: pre-wrap; overflow-wrap: anywhere; padding-right: 54px; }
+.cmd .p { color: var(--term-cmd); }
+.copy { position: absolute; top: 8px; right: 8px; font: 600 0.6875rem var(--font-body); color: var(--term-fg); background: transparent; border: 1px solid #3a4352; border-radius: 4px; padding: 3px 8px; cursor: pointer; }
+.stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.stats div { padding: 12px 14px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stats div:last-child { border-right: 0; }
+.stats b { font-family: var(--font-display); font-stretch: 112%; font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stats span { font-size: 0.8125rem; color: var(--muted); line-height: 1.3; }
+
+/* Layers */
+.layers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.layer { padding: 16px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.layer:last-child { border-right: 0; }
+.layer .tag { font-family: var(--font-mono); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.layer p { font-size: 0.875rem; color: var(--muted); }
+.meter { margin-top: auto; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); }
+
+.lvl { font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+.lvl.must { color: var(--must); background: var(--must-soft); }
+.lvl.should { color: var(--should); background: var(--should-soft); }
+.lvl.may { color: var(--may); background: var(--may-soft); }
+.rid { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+.prefix { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 500; color: var(--accent); background: var(--accent-soft); padding: 2px 7px; border-radius: 3px; }
+.file { font-size: 0.8125rem; color: var(--muted); }
+
+.anatomy { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.a-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; }
+.anatomy dl { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 0.9375rem; }
+.anatomy dt { font-family: var(--font-mono); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); padding-top: 3px; }
+.anatomy dd { margin: 0; min-width: 0; }
+
+/* Workflow */
+.phases { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; counter-reset: ph; }
+.phase { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; counter-increment: ph; }
+.phase::before { content: counter(ph, decimal-leading-zero); font-family: var(--font-mono); font-size: 0.6875rem; color: var(--accent); }
+.phase p { font-size: 0.875rem; color: var(--muted); }
+.phase ul { margin: 0; padding-left: 1rem; font-size: 0.8125rem; display: flex; flex-direction: column; gap: 2px; }
+.gate { color: var(--must); font-family: var(--font-mono); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+.viewer { display: flex; flex-direction: column; gap: 12px; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tabs button { font: 600 0.875rem var(--font-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 6px 14px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.shot { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.frame { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.frame-bar { display: flex; gap: 10px; align-items: center; padding: 7px 12px; border-bottom: 1px solid var(--line); background: var(--code-bg); font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); overflow-wrap: anywhere; }
+.frame img { display: block; width: 100%; height: auto; }
+.shot figcaption { font-size: 0.9375rem; color: var(--muted); max-width: 46rem; }
+.shot figcaption b { color: var(--ink); font-weight: 600; }
+
+.lanes { width: 100%; height: auto; display: block; }
+.lanes .main { stroke: var(--ink); stroke-width: 3; fill: none; }
+.lanes .br { stroke: var(--accent); stroke-width: 2.5; fill: none; }
+.lanes .dot { fill: var(--surface); stroke: var(--ink); stroke-width: 2.5; }
+.lanes .dot.b { stroke: var(--accent); }
+.lanes text { font-family: var(--font-mono); font-size: 12px; fill: var(--muted); }
+.lanes .strong { fill: var(--ink); font-weight: 500; }
+.lanes .tagbox { fill: var(--may-soft); stroke: var(--may); }
+.lanes .tagtext { fill: var(--may); font-weight: 500; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--font-mono); font-weight: 500; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); background: var(--code-bg); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.round { font-family: var(--font-display); font-stretch: 112%; font-weight: 800; font-size: 1.3rem; color: var(--accent); width: 3rem; }
+.when { display: block; font-size: 0.8125rem; color: var(--muted); }
+.qs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.qs .q { display: block; color: var(--muted); font-size: 0.875rem; }
+.out { font-family: var(--font-mono); font-size: 0.75rem; white-space: nowrap; }
+.out.block { color: var(--must); }
+.out.ask { color: var(--should); }
+.out.fix { color: var(--may); }
+
+/* Terminals */
+.term { background: var(--term-bg); color: var(--term-fg); border-radius: var(--radius); padding: 14px 16px; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.55; }
+.term code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; color: inherit; }
+.t-cmd { color: var(--term-cmd); }
+.t-err { color: var(--term-err); font-weight: 500; }
+.t-warn { color: var(--term-warn); font-weight: 500; }
+.t-rule { color: var(--term-rule); }
+.t-ok { color: var(--term-cmd); }
+.t-exit { display: inline-block; margin-top: 4px; padding: 0 6px; border-radius: 3px; font-size: 0.6875rem; }
+.t-exit.bad { color: var(--term-bg); background: var(--term-err); }
+.t-exit.ok { color: var(--term-bg); background: var(--term-cmd); }
+.terms { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.terms > div { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.terms .wide { grid-column: 1 / -1; }
+.cap { font-size: 0.875rem; color: var(--muted); }
+.cap b { color: var(--ink); font-weight: 600; }
+
+.chat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.chat .who { font-family: var(--font-mono); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.chat .opt { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr); gap: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 5px; font-size: 0.9375rem; }
+.chat .opt.rec { border-color: var(--accent); background: var(--accent-soft); }
+.chat .opt span:first-child { font-family: var(--font-mono); color: var(--accent); }
+
+/* Catalog */
+.cat { display: flex; flex-direction: column; gap: 12px; }
+.cat + .cat { margin-top: 18px; }
+.cat-head { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
+.cat-head p { color: var(--muted); font-size: 0.9375rem; }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.gcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; scroll-margin-top: 20px; }
+.gtop { display: flex; gap: 10px; align-items: baseline; }
+.gmeta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.applies { font-size: 0.75rem; color: var(--muted); font-family: var(--font-mono); }
+.based { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: baseline; font-size: 0.8125rem; }
+.based .k { font-family: var(--font-mono); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-right: 2px; }
+.based a, .based .src { border: 1px solid var(--line); border-radius: 3px; padding: 0 6px; text-decoration: none; color: var(--ink); }
+.based a:hover { border-color: var(--accent); color: var(--accent); }
+details summary { cursor: pointer; font-weight: 600; font-size: 0.875rem; color: var(--accent); }
+.rules { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; }
+.rules li { display: grid; grid-template-columns: 4.6rem 5.3rem minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 6px 0; border-top: 1px solid var(--line); font-size: 0.875rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font-family: var(--font-mono); font-size: 0.6875rem; color: var(--accent); background: var(--accent-soft); padding: 1px 6px; border-radius: 3px; text-decoration: none; }
+
+.tree { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.55; }
+.links { display: flex; flex-wrap: wrap; gap: 10px; }
+.links a { font-weight: 600; text-decoration: none; border: 1px solid var(--line); background: var(--surface); padding: 8px 14px; border-radius: var(--radius); }
+.links a:hover { border-color: var(--accent); }
+footer { font-size: 0.8125rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+
+@media (max-width: 960px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-block: 24px 60px; }
+  .index { position: static; flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 6px; }
+  .index .label { display: none; }
+  .index a { border: 1px solid var(--line); border-radius: 14px; white-space: nowrap; padding: 4px 10px; }
+  .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .stats div:nth-child(3) { border-right: 0; }
+  .stats div:nth-child(-n+3) { border-bottom: 1px solid var(--line); }
+  .layers, .phases { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .layer:nth-child(2) { border-right: 0; }
+  .layer:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .start, .terms, .cards { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 540px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats div { border-right: 0; border-bottom: 1px solid var(--line); }
+  .stats div:nth-child(odd) { border-right: 1px solid var(--line); }
+  .stats div:nth-last-child(-n+2) { border-bottom: 0; }
+  .layers, .phases { grid-template-columns: minmax(0, 1fr); }
+  .layer { border-right: 0 !important; border-bottom: 1px solid var(--line); }
+  .layer:last-child { border-bottom: 0; }
+  .rules li { grid-template-columns: 4.6rem minmax(0, 1fr); }
+  .rules li span:last-child { grid-column: 1 / -1; }
+  .anatomy dl { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+
+<div class="shell">
+  <nav class="index" aria-label="Sections">
+    <div class="label">Guide</div>
+    <a href="#top">Start</a>
+    <a href="#how">How it works</a>
+    <a href="#workflow">Workflow</a>
+    <a href="#enforce">Enforcement</a>
+    <a href="#install">Install</a>
+    <a href="#catalog">Rule catalog</a>
+    <a href="#sources">Standards used</a>
+    <a href="#stack">Stack and repo</a>
+  </nav>
+
+  <main>
+    <header class="hero" id="top">
+      <div class="eyebrow">Version 0.1.0 · github.com/HDElectronics/dev-standard</div>
+      <h1>dev<span class="dash">-</span>standard</h1>
+      <p class="lede">An engineering standard that your coding agent installs, follows, and can't quietly skip.</p>
+      <p class="muted">Every rule has an ID, an RFC 2119 level, the published standard it comes from, and the hook or CI check that enforces it. The rules are adopted from Google's engineering practices, GitHub Spec Kit, OWASP, IETF RFCs, NIST and Google SRE rather than invented.</p>
+      <div class="start">
+        <div>
+          <span class="k">Claude Code, with the plugin</span>
+          <div class="cmd"><pre><span class="p">/plugin marketplace add HDElectronics/dev-standard</span>
+<span class="p">/plugin install dev-standard@dev-standard</span>
+<span class="p">/dev-standard:install</span></pre><button class="copy" type="button" data-copy="/plugin marketplace add HDElectronics/dev-standard&#10;/plugin install dev-standard@dev-standard&#10;/dev-standard:install">Copy</button></div>
+        </div>
+        <div>
+          <span class="k">Any coding agent</span>
+          <div class="cmd"><pre>Install dev-standard from https://github.com/HDElectronics/dev-standard by following its INSTALL.md.</pre><button class="copy" type="button" data-copy="Install dev-standard from https://github.com/HDElectronics/dev-standard by following its INSTALL.md.">Copy</button></div>
+        </div>
+      </div>
+      <div class="stats" aria-label="Counts from the repository">
+        <div><b>188</b><span>rules</span></div>
+        <div><b>27</b><span>rule groups</span></div>
+        <div><b>81</b><span>published standards cited</span></div>
+        <div><b>6</b><span>agent hooks</span></div>
+        <div><b>9</b><span>CI checks</span></div>
+        <div><b>34</b><span>tests</span></div>
+      </div>
+    </header>
+
+    <section id="how">
+      <div class="sec-head"><span class="eyebrow">How it works</span><h2>Written rules, then checks that run anyway</h2></div>
+      <p>An agent follows written instructions most of the time. dev-standard makes "most of the time" into "every time" with four layers, from soft to hard. A rule with no automated check is labeled advisory, so the list of MUST rules stays honest.</p>
+      <div class="layers">
+        <div class="layer"><span class="tag">Layer 1</span><h4>Instruct</h4><p><code>AGENTS.md</code> carries the MUST rules as one-liners. The full rules live in <code>.dev-standard/standards/</code>.</p><div class="meter"><i style="width:25%"></i></div></div>
+        <div class="layer"><span class="tag">Layer 2</span><h4>Guide</h4><p><code>/brainstorm</code>, Spec Kit commands, <code>/pr</code> and templates make the right shape the easy path.</p><div class="meter"><i style="width:50%"></i></div></div>
+        <div class="layer"><span class="tag">Layer 3</span><h4>Enforce</h4><p>Claude Code hooks block the action or fix it as it happens. Git hooks catch the rest locally.</p><div class="meter"><i style="width:78%"></i></div></div>
+        <div class="layer"><span class="tag">Layer 4</span><h4>Verify</h4><p><code>dev-standard check</code> in CI, security scans, rulesets on <code>main</code>, and a reviewer agent.</p><div class="meter"><i style="width:100%"></i></div></div>
+      </div>
+      <div class="sub">
+        <h3>Anatomy of a rule</h3>
+        <p class="muted">Every rule follows the same shape, so people, agents and tools read it the same way. This one is taken straight from the standard:</p>
+        <div class="anatomy"><div class="a-row"><span class="rid">ABU-001</span><span class="lvl must">MUST</span><strong>Rate limit every public endpoint per client and per user</strong></div><p>Every public endpoint has a limit per client IP and, once authenticated, per user or API key. Use a token bucket or sliding window kept in a shared store (Redis), never in process memory.</p><dl><dt>Why</dt><dd>In-memory counters reset on restart and multiply by the number of replicas, so the real limit is unknown.</dd><dt>Check</dt><dd>Integration test sends limit+1 requests and expects <code>429</code>. A route test fails if a route has neither a limit decorator nor an explicit exemption.</dd><dt>Based on</dt><dd>OWASP API Security Top 10: API4:2023 Unrestricted Resource Consumption, RFC 6585 (429 Too Many Requests)</dd></dl><p class="file">From <code>standards/production/abuse.md</code></p></div>
+        <p class="muted">Levels follow RFC 2119. A MUST rule blocks at its group's enforcement level; a SHOULD rule warns; a MAY rule is guidance. Each repo sets a level per group (<code>block</code>, <code>warn</code>, <code>off</code>) in <code>.dev-standard.json</code>, and records approved exceptions there as waivers with an expiry date.</p>
+      </div>
+    </section>
+
+    <section id="workflow">
+      <div class="sec-head"><span class="eyebrow">Workflow</span><h2>From idea to merged code</h2></div>
+      <p>Every feature passes through the same four stages. The red gates are decisions that only a person can make; hooks stop the agent from making them on its own.</p>
+      <div class="phases">
+        <div class="phase"><h4>Brainstorm</h4><p>Find the right problem and direction.</p><ul><li>Frame, diverge, converge</li><li>Decide <span class="gate">gate</span></li></ul></div>
+        <div class="phase"><h4>Specify</h4><p>GitHub Spec Kit, used as is.</p><ul><li>Specify, Clarify <span class="gate">gate</span></li><li>Plan, Tasks, Analyze</li></ul></div>
+        <div class="phase"><h4>Ship</h4><p>One task per short-lived branch.</p><ul><li>Implement test first</li><li>Verify <span class="gate">gate</span>, PR, review</li></ul></div>
+        <div class="phase"><h4>Remember</h4><p>Decisions outlive the chat.</p><ul><li>ADRs in <code>docs/adr/</code></li><li>Accepted by a person <span class="gate">gate</span></li></ul></div>
+      </div>
+
+      <div class="sub">
+        <h3>The brainstorm board</h3>
+        <p class="muted"><code>/brainstorm &lt;slug&gt; "problem"</code> copies this board into <code>brainstorms/&lt;slug&gt;/</code> and fills in only its data. You work it in a browser, then export <code>brainstorm.md</code>, which becomes the input for the spec. The screenshots show the board's built-in example.</p>
+        <div class="viewer">
+          <div class="tabs" role="tablist" aria-label="Board stages">
+            <button type="button" role="tab" id="t-frame" aria-controls="s-frame" aria-selected="true">1 · Frame</button>
+            <button type="button" role="tab" id="t-diverge" aria-controls="s-diverge" aria-selected="false">2 · Diverge</button>
+            <button type="button" role="tab" id="t-converge" aria-controls="s-converge" aria-selected="false">3 · Converge</button>
+            <button type="button" role="tab" id="t-decide" aria-controls="s-decide" aria-selected="false">4 · Decide</button>
+          </div>
+          <figure class="shot" id="s-frame" role="tabpanel" aria-labelledby="t-frame">
+            <div class="frame"><div class="frame-bar">brainstorms/faster-restock/brainstorm.html</div><img src="img/brainstorm-frame.png" alt="Frame stage: the problem with evidence, a How-might-we question, users, success signal, constraints and appetite." width="1800" height="1463"></div>
+            <figcaption><b>Frame.</b> State the problem with evidence, turn it into one "How might we" question, and set the appetite (how much time it's worth) before any solution is scored. Appetite comes from Basecamp's Shape Up.</figcaption>
+          </figure>
+          <figure class="shot" id="s-diverge" role="tabpanel" aria-labelledby="t-diverge" hidden>
+            <div class="frame"><div class="frame-bar">brainstorms/faster-restock/brainstorm.html</div><img src="img/brainstorm-diverge.png" alt="Diverge stage: seven idea cards, including a do-nothing baseline, and a form to add your own idea." width="1800" height="1515" loading="lazy"></div>
+            <figcaption><b>Diverge.</b> The agent proposes at least five different options, always including a do-nothing baseline (BRN-002). You add your own. Nothing is judged yet: this is the first half of the Double Diamond.</figcaption>
+          </figure>
+          <figure class="shot" id="s-converge" role="tabpanel" aria-labelledby="t-converge" hidden>
+            <div class="frame"><div class="frame-bar">brainstorms/faster-restock/brainstorm.html</div><img src="img/brainstorm-converge.png" alt="Converge stage: a scoring table with dots, impact, effort and confidence, an impact versus effort matrix, and an ICE ranking." width="1800" height="1290" loading="lazy"></div>
+            <figcaption><b>Converge.</b> Dot voting from the GV Design Sprint, then an ICE score (impact × confidence × ease) for each idea, plotted on an impact/effort matrix so quick wins stand out.</figcaption>
+          </figure>
+          <figure class="shot" id="s-decide" role="tabpanel" aria-labelledby="t-decide" hidden>
+            <div class="frame"><div class="frame-bar">brainstorms/faster-restock/brainstorm.html</div><img src="img/brainstorm-decide.png" alt="Decide stage: one direction chosen, a reason, a reason for each rejected idea, and a live preview of brainstorm.md with export buttons." width="1800" height="1590" loading="lazy"></div>
+            <figcaption><b>Decide.</b> You pick the direction and say why, and every rejected idea gets a reason that later becomes a non-goal in the spec. Only you can record this decision; a hook blocks the agent from writing it (BRN-004).</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="sub">
+        <h3>Branches: trunk-based, one task per branch</h3>
+        <p class="muted">The spec documents merge to <code>main</code> first. Each task then gets its own branch from the latest <code>main</code>, merged within three days. Unfinished features ship behind a flag that defaults to off, and releases are tags on <code>main</code> (BRA-001 to BRA-006).</p>
+        <div class="frame" style="padding:12px 8px">
+          <svg class="lanes" viewBox="0 0 760 190" role="img" aria-label="main with a spec branch and two task branches merging back, then a release tag">
+            <path class="main" d="M20 140 H740"></path>
+            <path class="br" d="M70 140 C 100 140, 100 60, 130 60 H 190 C 220 60, 220 140, 250 140"></path>
+            <path class="br" d="M250 140 C 280 140, 280 60, 310 60 H 370 C 400 60, 400 140, 430 140"></path>
+            <path class="br" d="M430 140 C 460 140, 460 60, 490 60 H 550 C 580 60, 580 140, 610 140"></path>
+            <circle class="dot" cx="70" cy="140" r="6"></circle><circle class="dot" cx="250" cy="140" r="6"></circle><circle class="dot" cx="430" cy="140" r="6"></circle><circle class="dot" cx="610" cy="140" r="6"></circle>
+            <circle class="dot b" cx="160" cy="60" r="5"></circle><circle class="dot b" cx="340" cy="60" r="5"></circle><circle class="dot b" cx="520" cy="60" r="5"></circle>
+            <text class="strong" x="160" y="38" text-anchor="middle">013-faster-restock</text><text x="160" y="22" text-anchor="middle">spec docs PR</text>
+            <text class="strong" x="340" y="38" text-anchor="middle">013-t001-bom-parser</text><text x="340" y="22" text-anchor="middle">task PR, flag off</text>
+            <text class="strong" x="520" y="38" text-anchor="middle">013-t002-paste-box</text><text x="520" y="22" text-anchor="middle">task PR, flag on</text>
+            <text class="strong" x="24" y="168">main</text>
+            <rect class="tagbox" x="660" y="126" width="72" height="26" rx="4"></rect><text class="tagtext" x="696" y="143" text-anchor="middle">v1.5.0</text>
+            <text x="250" y="168" text-anchor="middle">squash</text><text x="430" y="168" text-anchor="middle">squash</text><text x="610" y="168" text-anchor="middle">squash</text>
+          </svg>
+        </div>
+        <p class="muted"><code>main</code> is protected by GitHub rulesets kept in the repo: pull request, a human approval of the latest push, required checks on an up-to-date branch, code-owner review of the files that define the rules, no force pushes, no bypass.</p>
+      </div>
+
+      <div class="sub">
+        <h3>The decision log</h3>
+        <p class="muted">Significant decisions (framework, database, auth, deploy target, major dependencies) are recorded as Architecture Decision Records in <code>docs/adr/</code>, in MADR format. The agent drafts them as <code>proposed</code>; only you set <code>accepted</code>. Accepted records are never rewritten: a new one supersedes them. Before proposing a design, the agent reads the accepted ADRs for that area and can't contradict one without proposing a replacement (ADR-008).</p>
+      </div>
+    </section>
+
+    <section id="enforce">
+      <div class="sec-head"><span class="eyebrow">Enforcement</span><h2>What happens when the agent cuts a corner</h2></div>
+      <p>Six Claude Code hooks run on the agent's own actions. A blocked action returns the rule ID and the fix, so the agent can correct itself. The captures below are real output from the hooks, run against a demo repo.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Hook</th><th>When</th><th>Rules</th><th>What it does</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td><code>guard-approvals</code></td><td>Edit, Write</td><td class="rid">BRN-004 SDD-001 ADR-005</td><td>Stops the agent from recording a brainstorm decision, approving a spec, or accepting an ADR.</td><td class="out block">blocks</td></tr>
+            <tr><td><code>require-brainstorm</code></td><td>Edit, Write</td><td class="rid">BRN-001</td><td>No spec until its brainstorm is decided.</td><td class="out block">blocks</td></tr>
+            <tr><td><code>require-spec</code></td><td>Edit, Write</td><td class="rid">SDD-001</td><td>No source edits on a feature branch until you approve the spec. Tests and docs stay open.</td><td class="out block">blocks</td></tr>
+            <tr><td><code>no-bypass</code></td><td>Bash</td><td class="rid">AGT-002 GIT-005 BRA-011 SEC-005</td><td>Blocks <code>--no-verify</code>, commits and force pushes on <code>main</code>, and <code>--admin</code> merges. Asks you before <code>rm -rf</code>, <code>reset --hard</code>, <code>DROP</code> or ruleset changes.</td><td class="out ask">blocks or asks</td></tr>
+            <tr><td><code>format-file</code></td><td>after Edit, Write</td><td class="rid">STY-001</td><td>Formats each file the agent writes with ruff, Biome or clang-format.</td><td class="out fix">fixes</td></tr>
+            <tr><td><code>definition-of-done</code></td><td>Stop</td><td class="rid">AGT-003</td><td>Runs the fast checks before the agent finishes. Blocks up to three times, then lets it stop and report the failure.</td><td class="out block">blocks</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="terms">
+        <div><span class="cap"><b>Editing code before the spec is approved</b></span><pre class="term"><code><span class="t-cmd">$ # agent tries: Edit app/main.py</span>
+<span class="t-rule">SDD-001</span>: spec 013 is not approved, so source files can&#x27;t be edited on branch 013-faster-restock yet.
+Finish /speckit.clarify, then ask the user to set &#x27;**Status**: Approved&#x27; in specs/013-*/spec.md.
+Tests and docs can still be written. Rule: .dev-standard/standards/sdd.md
+<span class="t-exit bad">exit 2</span></code></pre></div>
+        <div><span class="cap"><b>Writing a spec without a decided brainstorm</b></span><pre class="term"><code><span class="t-cmd">$ # agent tries: Write specs/013-faster-restock/spec.md</span>
+<span class="t-rule">BRN-001</span>: specs/013-faster-restock has no decided brainstorm.md, so the spec can&#x27;t be written yet.
+Run /brainstorm &lt;slug&gt; &quot;problem&quot; and let the user decide on the board.
+Bug fixes and chores use fix/ or chore/ branches and need no brainstorm. Rule: .dev-standard/standards/brainstorm.md
+<span class="t-exit bad">exit 2</span></code></pre></div>
+        <div><span class="cap"><b>Approving its own spec</b></span><pre class="term"><code><span class="t-cmd">$ # agent tries: Edit spec.md → &quot;**Status**: Approved&quot;</span>
+<span class="t-rule">SDD-001</span>: only the user approves a spec. Keep &#x27;**Status**: Draft&#x27; and ask the user to approve it.
+If you are changing an approved spec, set it back to Draft and run /speckit.clarify (<span class="t-rule">SDD-006</span>).
+<span class="t-exit bad">exit 2</span></code></pre></div>
+        <div><span class="cap"><b>Skipping git hooks, merging past protection</b></span><pre class="term"><code><span class="t-cmd">$ git commit --no-verify -m &quot;feat: quick fix&quot;</span>
+<span class="t-rule">AGT-002</span>: don&#x27;t skip git hooks. Fix what the hook reports, or tell the user why it fails.
+<span class="t-exit bad">exit 2</span>
+
+<span class="t-cmd">$ gh pr merge 42 --squash --admin</span>
+<span class="t-rule">BRA-011</span>: don&#x27;t merge past branch protection. Get the required reviews and checks instead.
+<span class="t-exit bad">exit 2</span></code></pre></div>
+        <div class="wide"><span class="cap"><b>Trying to finish while a test fails</b>: the Stop hook sends the failure back to the agent</span><pre class="term"><code><span class="t-cmd">$ # agent tries to finish its turn</span>
+<span class="t-rule">AGT-003</span>: &#x27;python3 -m pytest -q tests&#x27; failed (attempt 1 of 3). Fix it before finishing, or explain to the user why it can&#x27;t pass.
+Last lines of output:
+F                                                                        [100%]
+    def test_cart_total_rounds_to_cents():
+&gt;       assert round(0.1 + 0.2, 1) == 0.4, &quot;013/<span class="t-rule">FR-003</span>: cart total must round to cents&quot;
+E       AssertionError: 013/<span class="t-rule">FR-003</span>: cart total must round to cents
+E       assert 0.3 == 0.4
+E        +  where 0.3 = round((0.1 + 0.2), 1)
+tests/test_totals.py:2: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_totals.py::test_cart_total_rounds_to_cents - AssertionError...
+1 failed in 0.02s
+<span class="t-exit bad">exit 2</span></code></pre></div>
+      </div>
+
+      <div class="sub">
+        <h3>CI checks the hooks can't see</h3>
+        <p class="muted"><code>dev-standard check</code> is one dependency-free Python script. In CI it reads the pull request, the diff and <code>.dev-standard.json</code>, and reports each finding at its group's level, so warnings never fail the build and blocking findings always do.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Check</th><th>Rules</th><th>Catches</th></tr></thead>
+            <tbody>
+              <tr><td><code>manifest</code></td><td class="rid">INS</td><td>Invalid <code>.dev-standard.json</code>, incomplete or expired waivers</td></tr>
+              <tr><td><code>branch</code></td><td class="rid">BRA-003</td><td>Branch names outside the convention</td></tr>
+              <tr><td><code>spec</code></td><td class="rid">SDD-001</td><td>Source changes on a spec branch before approval; missing status line</td></tr>
+              <tr><td><code>brainstorm</code></td><td class="rid">BRN-001</td><td>A new spec with no decided brainstorm</td></tr>
+              <tr><td><code>trace</code></td><td class="rid">SDD-003</td><td>Requirements of an implemented spec that no test references</td></tr>
+              <tr><td><code>adr</code></td><td class="rid">ADR-002 ADR-004 ADR-007</td><td>Bad file names, reused numbers, invalid status, index out of sync</td></tr>
+              <tr><td><code>pr</code></td><td class="rid">PR-001 PR-003</td><td>Non-conventional title; missing or empty description sections</td></tr>
+              <tr><td><code>docs</code></td><td class="rid">DOC-007</td><td>A feature that changes code but no docs</td></tr>
+              <tr><td><code>deps</code></td><td class="rid">SEC-004 UI-002 AUTH-001</td><td>Unexplained new dependencies, banned UI libraries without an ADR, low-level crypto</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <span class="cap"><b>A pull request that breaks several rules at once</b> (real output against the demo repo)</span>
+        <pre class="term"><code><span class="t-cmd">$ dev-standard check --base main --title &quot;Added BOM stuff&quot; --body-file pr.md</span>
+<span class="t-err">ERROR</span>   <span class="t-rule">SDD-001</span>   app/main.py: Source changed on branch 013-faster-restock, but spec 013 is not approved.
+<span class="t-err">ERROR</span>   <span class="t-rule">BRN-001</span>   specs/013-faster-restock/spec.md: New spec without a decided brainstorm.md next to it.
+<span class="t-err">ERROR</span>   <span class="t-rule">ADR-007</span>   docs/adr/README.md: Index says &#x27;proposed&#x27; for ADR-0001, the file says &#x27;accepted&#x27;.
+<span class="t-err">ERROR</span>   <span class="t-rule">ADR-007</span>   docs/adr/README.md: 0002-use-keycloak.md is not listed in the index.
+<span class="t-err">ERROR</span>   <span class="t-rule">PR-001</span>    PR title &#x27;Added BOM stuff&#x27; is not a Conventional Commit line, e.g. &#x27;feat(cart): match pasted BOM lines&#x27;.
+<span class="t-err">ERROR</span>   <span class="t-rule">PR-003</span>    PR section &#x27;## Spec&#x27; is empty. Write &#x27;None&#x27; if there is nothing to say.
+<span class="t-err">ERROR</span>   <span class="t-rule">PR-003</span>    PR description is missing the section &#x27;## How I tested&#x27;.
+<span class="t-err">ERROR</span>   <span class="t-rule">PR-003</span>    PR description is missing the section &#x27;## Risk and rollback&#x27;.
+<span class="t-err">ERROR</span>   <span class="t-rule">PR-003</span>    PR description is missing the section &#x27;## Follow-ups (out of scope)&#x27;.
+<span class="t-err">ERROR</span>   <span class="t-rule">PR-003</span>    PR description is missing the section &#x27;## Self-review&#x27;.
+<span class="t-err">ERROR</span>   <span class="t-rule">UI-002</span>    package.json: New UI library `@mui/material` needs an ADR, referenced in the PR.
+<span class="t-warn">WARNING</span> <span class="t-rule">SEC-004</span>   package.json: New dependency `@mui/material`: justify it in the PR (purpose, size, license, maintenance).
+<span class="t-exit bad">exit 1</span></code></pre>
+        <span class="cap"><b>dev-standard tests itself</b>: the hooks and every check run against throwaway git repos</span>
+        <pre class="term"><code><span class="t-cmd">$ python3 -m unittest discover -s tests</span>
+Ran 34 tests in 1.977s
+
+<span class="t-ok">OK</span>
+<span class="t-cmd">$ claude plugin validate .</span>
+<span class="t-ok">✔ Validation passed with warnings</span></code></pre>
+      </div>
+    </section>
+
+    <section id="install">
+      <div class="sec-head"><span class="eyebrow">Install</span><h2>An interview, not a script</h2></div>
+      <p>The agent installs dev-standard by studying your repo and asking you about what it can't work out alone. Every question comes with a recommendation and the evidence behind it. Nothing changes until you approve the plan, and your existing code keeps its conventions: the standard applies to new and changed code.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Round</th><th>Stage</th><th>Questions the agent may ask</th></tr></thead>
+          <tbody>
+            <tr><td class="round">0</td><td><strong>Start</strong><span class=when>before Phase 1</span></td><td><ul class="qs"><li><span class="rid">Q-RESUME-1</span> <strong>Resume or restart</strong><span class="q">I found an unfinished dev-standard install from {date}, stopped at {phase}. Continue it?</span></li><li><span class="rid">Q-START-1</span> <strong>Install mode</strong><span class="q">How do you want to run the install?</span></li><li><span class="rid">Q-START-2</span> <strong>How dev-standard is added</strong><span class="q">dev-standard isn&#x27;t in this repo yet. How should I add it?</span></li><li><span class="rid">Q-START-3</span> <strong>Uncommitted changes</strong><span class="q">There are uncommitted changes in {n} files. What should I do before starting?</span></li></ul></td></tr>
+<tr><td class="round">1</td><td><strong>Confirm the picture</strong><span class=when>after Phase 1</span></td><td><ul class="qs"><li><span class="rid">Q-REPO-1</span> <strong>Discovery summary</strong><span class="q">Here is what I found: {languages and frameworks with paths, tools, CI, commit style, existing agent files, decision records}. Is this right?</span></li><li><span class="rid">Q-REPO-2</span> <strong>Deployment</strong><span class="q">Is this project deployed, or will it be?</span></li><li><span class="rid">Q-REPO-3</span> <strong>Who works on the repo</strong><span class="q">Who works on this repo?</span></li><li><span class="rid">Q-REPO-4</span> <strong>The agent&#x27;s GitHub identity</strong><span class="q">GitHub won&#x27;t let you approve your own PR. Under which identity should the agent push and open PRs?</span></li></ul></td></tr>
+<tr><td class="round">2</td><td><strong>Scope and strictness</strong><span class=when>Phase 2</span></td><td><ul class="qs"><li><span class="rid">Q-SCOPE-1</span> <strong>Profiles</strong><span class="q">Which profiles should apply? I recommend the ones that match what I found.</span></li><li><span class="rid">Q-SCOPE-2</span> <strong>Packs</strong><span class="q">I found {signal}. Add the matching pack?</span></li><li><span class="rid">Q-SCOPE-3</span> <strong>Strictness</strong><span class="q">How strict should the checks be at first?</span></li><li><span class="rid">Q-SCOPE-4</span> <strong>Fast check command</strong><span class="q">Which command should run before the agent finishes a task? It must pass today.</span></li></ul></td></tr>
+<tr><td class="round">3</td><td><strong>Conflicts</strong><span class=when>Phase 2; repeat until every conflict is decided</span></td><td><ul class="qs"><li><span class="rid">Q-CONFLICT-n</span> <strong>One per conflict</strong><span class="q">Your repo {does X} ({evidence}). Rule {ID} says {Y}. What should happen?</span></li><li><span class="rid">Q-CONFLICT-AGENTS</span> <strong>Existing agent instructions</strong><span class="q">Your {file} says {quote}. The standard says {rule}. Which should agents follow?</span></li><li><span class="rid">Q-WAIVER-EXPIRY</span> <strong>Waiver expiry</strong><span class="q">When should the {n} waivers expire, so they get reviewed again?</span></li></ul></td></tr>
+<tr><td class="round">4</td><td><strong>Approve the plan</strong><span class=when>end of Phase 3</span></td><td><ul class="qs"><li><span class="rid">Q-APPROVE-1</span> <strong>Plan approval</strong><span class="q">Here is the plan. Approve it?</span></li></ul></td></tr>
+<tr><td class="round">5</td><td><strong>Actions outside the repo</strong><span class=when>Phase 4; ask right before each, in every mode</span></td><td><ul class="qs"><li><span class="rid">Q-ACT-1</span> <strong>Install Spec Kit</strong><span class="q">Spec Kit is installed with <code>uvx</code> from GitHub (network access). Run it now?</span></li><li><span class="rid">Q-ACT-2</span> <strong>Git hook manager</strong><span class="q">Install the git hooks with <code>{command}</code> now?</span></li><li><span class="rid">Q-ACT-3</span> <strong>Branch protection</strong><span class="q">Branch protection changes the repo on GitHub and needs admin rights. How should we apply it?</span></li></ul></td></tr>
+<tr><td class="round">6</td><td><strong>Hand off</strong><span class=when>Phase 6</span></td><td><ul class="qs"><li><span class="rid">Q-END-1</span> <strong>Pull request</strong><span class="q">Everything is applied on <code>chore/adopt-dev-standard</code>. Open the PR?</span></li><li><span class="rid">Q-END-2</span> <strong>First decision records</strong><span class="q">Which decisions should I record now as proposed ADRs? You accept them afterward.</span></li></ul></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted">The agent skips any question your repo already answers. In Claude Code the questions arrive as multiple-choice prompts, four at a time; other agents ask them in chat. Here is one, word for word from <code>install/interview.md</code>:</p>
+      <div class="chat" aria-label="Example question">
+        <span class="who">Agent · Q-SCOPE-3 · Strictness</span>
+        <strong>How strict should the checks be at first?</strong>
+        <div class="opt rec"><span>a</span><span><b>Gradual (recommended for an existing repo).</b> Workflow gates (AGT, BRN, SDD, GIT, BRA) block now; everything else warns until it's green.</span></div>
+        <div class="opt"><span>b</span><span><b>Strict (recommended for a new repo).</b> Everything blocks from day one.</span></div>
+        <div class="opt"><span>c</span><span><b>Advisory.</b> Everything only warns.</span></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Mode</th><th>What the agent asks</th></tr></thead>
+          <tbody>
+            <tr><td><b>Guided</b></td><td>Every question that applies to your repo.</td></tr>
+            <tr><td><b>Quick</b></td><td>Only conflicts that would change existing code, questions without a clear recommendation, the plan approval, and every action outside the repo. Everything else takes the recommendation and is logged as assumed.</td></tr>
+            <tr><td><b>Report only</b></td><td>Studies the repo and writes the adoption report. Nothing else changes.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="sub">
+        <h3>What lands in your repo</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Path</th><th>Purpose</th><th>How</th></tr></thead>
+            <tbody>
+              <tr><td><code>.dev-standard/</code></td><td>This repository, pinned to a release</td><td>git submodule</td></tr>
+              <tr><td><code>.dev-standard.json</code></td><td>Version, profiles, enforcement levels, waivers</td><td>new file</td></tr>
+              <tr><td><code>AGENTS.md</code>, <code>CLAUDE.md</code></td><td>MUST rules, workflow, your repo's own conventions</td><td>marked block, merged</td></tr>
+              <tr><td><code>.claude/</code></td><td>Hooks, <code>/brainstorm</code>, <code>/pr</code>, reviewer agent</td><td>merged (skipped when you use the plugin)</td></tr>
+              <tr><td><code>.specify/</code></td><td>GitHub Spec Kit with dev-standard's template additions</td><td><code>specify init</code>, then merged</td></tr>
+              <tr><td><code>.github/</code></td><td>PR template, CI job, rulesets, CODEOWNERS</td><td>merged</td></tr>
+              <tr><td><code>docs/adr/</code></td><td>Decision log, template and index</td><td>new, unless you already keep one</td></tr>
+              <tr><td><code>docs/dev-standard/adoption-report.md</code></td><td>Every finding, question, answer and change</td><td>new file</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted">Every answer is logged in the adoption report, so an interrupted install picks up where it stopped. The whole install happens on a <code>chore/adopt-dev-standard</code> branch; to back out, delete that branch.</p>
+      </div>
+    </section>
+
+    <section id="catalog">
+      <div class="sec-head"><span class="eyebrow">Rule catalog</span><h2>All 188 rules, by group</h2></div>
+      <p>Generated from the files in <code>standards/</code>. Open a group to see its rules; each rule's full text, reason and check are in its source file.</p>
+      <div class="cat"><div class="cat-head"><h3>Workflow</h3><p>How work moves from idea to merged code.</p></div><div class="cards">
+<article class="gcard" id="g-agt"><div class="gtop"><span class="prefix">AGT</span><h4>Agent conduct</h4></div><div class="gmeta"><span class="lvl must">5 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: all</span></div><div class="based"><span class="k">Based on</span><a href="&quot;&quot;">dev-standard (agent-specific)</a><a href="https://google.github.io/eng-practices/review/developer/">Google Engineering Practices, The CL author&#x27;s guide</a></div><details><summary>6 rules</summary><ul class="rules"><li><span class="rid">AGT-001</span><span class="lvl must">MUST</span><span>Read the spec, plan and tasks before editing code</span></li><li><span class="rid">AGT-002</span><span class="lvl must">MUST NOT</span><span>Bypass checks</span></li><li><span class="rid">AGT-003</span><span class="lvl must">MUST</span><span>Run checks before saying a task is done, and report results as they are</span></li><li><span class="rid">AGT-004</span><span class="lvl must">MUST NOT</span><span>Change a test&#x27;s assertion to make it pass without saying why</span></li><li><span class="rid">AGT-005</span><span class="lvl must">MUST</span><span>Stay inside the current task</span></li><li><span class="rid">AGT-006</span><span class="lvl should">SHOULD</span><span>Ask one precise question when a requirement is ambiguous</span></li></ul><p class="file">Source file: <code>standards/agent-conduct.md</code></p></details></article>
+<article class="gcard" id="g-ins"><div class="gtop"><span class="prefix">INS</span><h4>Installation and adoption</h4></div><div class="gmeta"><span class="lvl must">13 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: all</span></div><div class="based"><span class="k">Based on</span><a href="https://abseil.io/resources/swe-book/html/ch22.html">Software Engineering at Google, ch. 22 &quot;Large-Scale Changes</a><a href="https://martinfowler.com/bliki/StranglerFigApplication.html">Martin Fowler, &quot;Strangler Fig Application</a><a href="https://git-scm.com/book/en/v2/Git-Tools-Submodules">Git submodules</a><a href="https://git-scm.com/docs/git-blame#Documentation/git-blame.txt---ignore-revs-fileltfilegt">git blame --ignore-revs-file</a></div><details><summary>14 rules</summary><ul class="rules"><li><span class="rid">INS-001</span><span class="lvl must">MUST</span><span>Discover before changing anything</span></li><li><span class="rid">INS-002</span><span class="lvl must">MUST</span><span>Get the user&#x27;s approval before applying</span></li><li><span class="rid">INS-003</span><span class="lvl must">MUST NOT</span><span>Overwrite or delete existing files</span></li><li><span class="rid">INS-004</span><span class="lvl must">MUST</span><span>Apply the standard to new and changed code</span></li><li><span class="rid">INS-005</span><span class="lvl must">MUST</span><span>Record every deviation as a waiver</span></li><li><span class="rid">INS-006</span><span class="lvl must">MUST</span><span>Ship mechanical changes in their own PR</span></li><li><span class="rid">INS-007</span><span class="lvl must">MUST</span><span>Roll out checks from warn to block</span></li><li><span class="rid">INS-008</span><span class="lvl must">MUST</span><span>Make the fast check green before turning on hooks</span></li><li><span class="rid">INS-009</span><span class="lvl must">MUST</span><span>Pin a release and upgrade on purpose</span></li><li><span class="rid">INS-010</span><span class="lvl should">SHOULD</span><span>Keep existing tools that meet the rule</span></li><li><span class="rid">INS-011</span><span class="lvl must">MUST</span><span>Follow the precedence order</span></li><li><span class="rid">INS-012</span><span class="lvl must">MUST</span><span>Ask about what the repo can&#x27;t answer, with a recommendation</span></li><li><span class="rid">INS-013</span><span class="lvl must">MUST</span><span>Log every answer in the adoption report</span></li><li><span class="rid">INS-014</span><span class="lvl must">MUST</span><span>Ask right before each action outside the repo</span></li></ul><p class="file">Source file: <code>standards/installation.md</code></p></details></article>
+<article class="gcard" id="g-brn"><div class="gtop"><span class="prefix">BRN</span><h4>Brainstorm</h4></div><div class="gmeta"><span class="lvl must">4 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: all</span></div><div class="based"><span class="k">Based on</span><a href="https://www.designcouncil.org.uk/our-resources/the-double-diamond/">Double Diamond (Design Council)</a><a href="https://basecamp.com/shapeup">Shape Up (Basecamp)</a><a href="https://www.gv.com/sprint/">GV Design Sprint</a><a href="&quot;&quot;">ICE scoring</a></div><details><summary>5 rules</summary><ul class="rules"><li><span class="rid">BRN-001</span><span class="lvl must">MUST</span><span>Start every feature spec from a decided brainstorm</span></li><li><span class="rid">BRN-002</span><span class="lvl must">MUST</span><span>Propose at least 5 materially different options, including a do-nothing baseline</span></li><li><span class="rid">BRN-003</span><span class="lvl must">MUST</span><span>Set the appetite before scoring</span></li><li><span class="rid">BRN-004</span><span class="lvl must">MUST NOT</span><span>Let the agent mark a direction as decided</span></li><li><span class="rid">BRN-005</span><span class="lvl should">SHOULD</span><span>Give every rejected option a one-line reason</span></li></ul><p class="file">Source file: <code>standards/brainstorm.md</code></p></details></article>
+<article class="gcard" id="g-sdd"><div class="gtop"><span class="prefix">SDD</span><h4>Spec-driven development</h4></div><div class="gmeta"><span class="lvl must">6 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: all</span></div><div class="based"><span class="k">Based on</span><a href="https://github.com/github/spec-kit">GitHub Spec Kit</a><a href="https://alistairmavin.com/ears/">EARS (Easy Approach to Requirements Syntax)</a><a href="https://www.industrialempathy.com/posts/design-docs-at-google/">Design docs at Google</a></div><details><summary>7 rules</summary><ul class="rules"><li><span class="rid">SDD-001</span><span class="lvl must">MUST</span><span>No source edits on a feature branch until the spec is approved</span></li><li><span class="rid">SDD-002</span><span class="lvl must">MUST</span><span>Write functional requirements in EARS</span></li><li><span class="rid">SDD-003</span><span class="lvl must">MUST</span><span>Reference every requirement ID in at least one test</span></li><li><span class="rid">SDD-004</span><span class="lvl must">MUST</span><span>Include Google design-doc sections in plan.md</span></li><li><span class="rid">SDD-005</span><span class="lvl must">MUST</span><span>Pass /speckit.analyze before implementation</span></li><li><span class="rid">SDD-006</span><span class="lvl must">MUST</span><span>Send scope changes back through Clarify</span></li><li><span class="rid">SDD-007</span><span class="lvl should">SHOULD</span><span>Keep a spec to about two pages</span></li></ul><p class="file">Source file: <code>standards/sdd.md</code></p></details></article>
+<article class="gcard" id="g-adr"><div class="gtop"><span class="prefix">ADR</span><h4>Architecture decision records</h4></div><div class="gmeta"><span class="lvl must">8 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: all</span></div><div class="based"><span class="k">Based on</span><a href="https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions">Michael Nygard, &quot;Documenting Architecture Decisions</a><a href="https://adr.github.io/madr/">MADR 4</a><a href="https://adr.github.io/">ADR GitHub organization</a><a href="https://cloud.google.com/architecture/architecture-decision-records">Google Cloud, &quot;Architecture decision records overview</a><a href="https://docs.aws.amazon.com/prescriptive-guidance/latest/architectural-decision-records/adr-process.html">AWS Prescriptive Guidance, &quot;ADR process</a></div><details><summary>9 rules</summary><ul class="rules"><li><span class="rid">ADR-001</span><span class="lvl must">MUST</span><span>Write an ADR for every architecturally significant decision</span></li><li><span class="rid">ADR-002</span><span class="lvl must">MUST</span><span>Use MADR, one decision per file, numbers never reused</span></li><li><span class="rid">ADR-003</span><span class="lvl must">MUST</span><span>Compare at least two options, including the status quo</span></li><li><span class="rid">ADR-004</span><span class="lvl must">MUST</span><span>Follow the status lifecycle; accepted ADRs are immutable</span></li><li><span class="rid">ADR-005</span><span class="lvl must">MUST NOT</span><span>Let the agent accept its own ADR</span></li><li><span class="rid">ADR-006</span><span class="lvl must">MUST</span><span>Land the ADR with, or before, the change it decides</span></li><li><span class="rid">ADR-007</span><span class="lvl must">MUST</span><span>Keep the decision log index current</span></li><li><span class="rid">ADR-008</span><span class="lvl must">MUST</span><span>Read the relevant accepted ADRs before proposing a design</span></li><li><span class="rid">ADR-009</span><span class="lvl should">SHOULD</span><span>Keep existing decision records where they are</span></li></ul><p class="file">Source file: <code>standards/decisions.md</code></p></details></article>
+</div></div>
+<div class="cat"><div class="cat-head"><h3>Code</h3><p>What the code itself looks like.</p></div><div class="cards">
+<article class="gcard" id="g-nam"><div class="gtop"><span class="prefix">NAM</span><h4>Naming conventions</h4></div><div class="gmeta"><span class="lvl must">7 MUST</span><span class="applies">applies to: all</span></div><div class="based"><span class="k">Based on</span><a href="https://google.github.io/styleguide/">Google Style Guides</a><a href="https://barrgroup.com/embedded-systems/books/embedded-c-coding-standard">BARR-C:2018 Embedded C Coding Standard</a></div><details><summary>7 rules</summary><ul class="rules"><li><span class="rid">NAM-001</span><span class="lvl must">MUST</span><span>Follow the casing table for the file&#x27;s language</span></li><li><span class="rid">NAM-002</span><span class="lvl must">MUST</span><span>Start function names with a verb</span></li><li><span class="rid">NAM-003</span><span class="lvl must">MUST</span><span>Put units in numeric names</span></li><li><span class="rid">NAM-004</span><span class="lvl must">MUST</span><span>Start boolean names with is, has, can or should</span></li><li><span class="rid">NAM-005</span><span class="lvl must">MUST</span><span>Write acronyms as words</span></li><li><span class="rid">NAM-006</span><span class="lvl must">MUST NOT</span><span>Use interface prefixes, Hungarian notation, or abbreviations outside the allowlist</span></li><li><span class="rid">NAM-007</span><span class="lvl must">MUST</span><span>Name branches and records by convention</span></li></ul><p class="file">Source file: <code>standards/naming.md</code></p></details></article>
+<article class="gcard" id="g-sty"><div class="gtop"><span class="prefix">STY</span><h4>Code style</h4></div><div class="gmeta"><span class="lvl must">5 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: all</span></div><div class="based"><span class="k">Based on</span><a href="https://google.github.io/styleguide/">Google Style Guides</a><a href="https://barrgroup.com/embedded-systems/books/embedded-c-coding-standard">BARR-C:2018 Embedded C Coding Standard</a><a href="https://misra.org.uk/">MISRA C:2023</a></div><details><summary>6 rules</summary><ul class="rules"><li><span class="rid">STY-001</span><span class="lvl must">MUST</span><span>Let the formatter decide formatting</span></li><li><span class="rid">STY-002</span><span class="lvl must">MUST</span><span>Use the strictest compiler and type-checker mode</span></li><li><span class="rid">STY-003</span><span class="lvl must">MUST</span><span>Write Python docstrings in Google style</span></li><li><span class="rid">STY-004</span><span class="lvl must">MUST</span><span>Replace magic numbers with named constants that carry units</span></li><li><span class="rid">STY-005</span><span class="lvl must">MUST</span><span>Comment why, not what; no commented-out code; link every TODO</span></li><li><span class="rid">STY-006</span><span class="lvl should">SHOULD</span><span>Keep functions short and flat</span></li></ul><p class="file">Source file: <code>standards/code-style.md</code></p></details></article>
+<article class="gcard" id="g-err"><div class="gtop"><span class="prefix">ERR</span><h4>Errors and logging</h4></div><div class="gmeta"><span class="lvl must">2 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: all</span></div><div class="based"><span class="k">Based on</span><a href="https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html">OWASP Logging Cheat Sheet</a></div><details><summary>3 rules</summary><ul class="rules"><li><span class="rid">ERR-001</span><span class="lvl must">MUST NOT</span><span>Catch and ignore</span></li><li><span class="rid">ERR-002</span><span class="lvl must">MUST</span><span>Write structured logs without secrets or personal data</span></li><li><span class="rid">ERR-003</span><span class="lvl should">SHOULD</span><span>Use typed errors at domain boundaries</span></li></ul><p class="file">Source file: <code>standards/errors-logging.md</code></p></details></article>
+<article class="gcard" id="g-tst"><div class="gtop"><span class="prefix">TST</span><h4>Testing</h4></div><div class="gmeta"><span class="lvl must">4 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: all</span></div><div class="based"><span class="k">Based on</span><a href="https://abseil.io/resources/swe-book">Software Engineering at Google (Winters, Manshreck, Wright)</a><a href="https://testing.googleblog.com/">Google Testing Blog</a></div><details><summary>5 rules</summary><ul class="rules"><li><span class="rid">TST-001</span><span class="lvl must">MUST</span><span>Start a bug fix with a failing test</span></li><li><span class="rid">TST-002</span><span class="lvl must">MUST</span><span>Classify tests by size, and run small tests on every commit</span></li><li><span class="rid">TST-003</span><span class="lvl must">MUST</span><span>Reach 80% coverage on changed lines</span></li><li><span class="rid">TST-004</span><span class="lvl must">MUST</span><span>Follow the Beyoncé rule</span></li><li><span class="rid">TST-005</span><span class="lvl should">SHOULD</span><span>Write DAMP tests with one behavior each</span></li></ul><p class="file">Source file: <code>standards/testing.md</code></p></details></article>
+<article class="gcard" id="g-doc"><div class="gtop"><span class="prefix">DOC</span><h4>Documentation</h4></div><div class="gmeta"><span class="lvl must">5 MUST</span><span class="lvl should">3 SHOULD</span><span class="applies">applies to: all</span></div><div class="based"><span class="k">Based on</span><a href="https://diataxis.fr/">Diátaxis</a><a href="https://developers.google.com/style">Google developer documentation style guide</a><a href="https://adr.github.io/madr/">MADR (Markdown Architectural Decision Records)</a><a href="https://c4model.com/">C4 model</a><a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog 1.1.0</a></div><details><summary>8 rules</summary><ul class="rules"><li><span class="rid">DOC-001</span><span class="lvl must">MUST</span><span>Organize docs by Diátaxis type</span></li><li><span class="rid">DOC-002</span><span class="lvl must">MUST</span><span>Give the README the required sections</span></li><li><span class="rid">DOC-003</span><span class="lvl must">MUST</span><span>Record hard-to-reverse decisions as ADRs in MADR format</span></li><li><span class="rid">DOC-004</span><span class="lvl must">MUST</span><span>Document public functions and modules with an example</span></li><li><span class="rid">DOC-005</span><span class="lvl must">MUST</span><span>Generate the changelog from commits in Keep a Changelog sections</span></li><li><span class="rid">DOC-006</span><span class="lvl should">SHOULD</span><span>Draw architecture diagrams at C4 levels in Mermaid</span></li><li><span class="rid">DOC-007</span><span class="lvl should">SHOULD</span><span>Change docs in the same PR as the behavior</span></li><li><span class="rid">DOC-008</span><span class="lvl should">SHOULD</span><span>Write prose in Google developer documentation style</span></li></ul><p class="file">Source file: <code>standards/documentation.md</code></p></details></article>
+</div></div>
+<div class="cat"><div class="cat-head"><h3>Collaboration</h3><p>How changes reach main.</p></div><div class="cards">
+<article class="gcard" id="g-git"><div class="gtop"><span class="prefix">GIT</span><h4>Commits and branches</h4></div><div class="gmeta"><span class="lvl must">4 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: all</span></div><div class="based"><span class="k">Based on</span><a href="https://www.conventionalcommits.org/en/v1.0.0/">Conventional Commits 1.0.0</a><a href="https://semver.org/">Semantic Versioning 2.0.0</a><a href="https://google.github.io/eng-practices/review/developer/cl-descriptions.html">Google Engineering Practices, Writing good CL descriptions</a></div><details><summary>5 rules</summary><ul class="rules"><li><span class="rid">GIT-001</span><span class="lvl must">MUST</span><span>Use Conventional Commits</span></li><li><span class="rid">GIT-002</span><span class="lvl must">MUST</span><span>Explain what and why in the body; put references in the footer</span></li><li><span class="rid">GIT-003</span><span class="lvl should">SHOULD</span><span>Make one logical change per commit, and keep every commit buildable</span></li><li><span class="rid">GIT-004</span><span class="lvl must">MUST</span><span>Work trunk-based with short-lived branches</span></li><li><span class="rid">GIT-005</span><span class="lvl must">MUST NOT</span><span>Commit to or force-push main</span></li></ul><p class="file">Source file: <code>standards/git.md</code></p></details></article>
+<article class="gcard" id="g-bra"><div class="gtop"><span class="prefix">BRA</span><h4>Branching and branch protection</h4></div><div class="gmeta"><span class="lvl must">11 MUST</span><span class="lvl should">2 SHOULD</span><span class="applies">applies to: all</span></div><div class="based"><span class="k">Based on</span><a href="https://trunkbaseddevelopment.com/">Trunk Based Development</a><a href="https://dora.dev/capabilities/trunk-based-development/">DORA capability &quot;Trunk-based development</a><a href="https://abseil.io/resources/swe-book/html/ch16.html">Software Engineering at Google, ch. 16 &quot;Version Control and Branch Management</a><a href="https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets">GitHub rulesets</a><a href="https://github.com/ossf/scorecard/blob/main/docs/checks.md#branch-protection">OpenSSF Scorecard, Branch-Protection check</a><a href="https://slsa.dev/">SLSA</a></div><details><summary>13 rules</summary><ul class="rules"><li><span class="rid">BRA-001</span><span class="lvl must">MUST</span><span>Keep main as the only long-lived branch, always releasable</span></li><li><span class="rid">BRA-002</span><span class="lvl must">MUST</span><span>One short-lived branch per task</span></li><li><span class="rid">BRA-003</span><span class="lvl must">MUST</span><span>Name branches by purpose</span></li><li><span class="rid">BRA-004</span><span class="lvl must">MUST</span><span>Merge the spec before the code, and hide unfinished work behind a flag</span></li><li><span class="rid">BRA-005</span><span class="lvl should">SHOULD</span><span>Rebase on main before asking for review</span></li><li><span class="rid">BRA-006</span><span class="lvl must">MUST</span><span>Release from main with tags; fix forward, then cherry-pick</span></li><li><span class="rid">BRA-007</span><span class="lvl must">MUST</span><span>Protect main with a ruleset kept in the repo</span></li><li><span class="rid">BRA-008</span><span class="lvl must">MUST</span><span>Require the blocking CI checks to pass on an up-to-date branch</span></li><li><span class="rid">BRA-009</span><span class="lvl must">MUST</span><span>Require a human approval of the latest push</span></li><li><span class="rid">BRA-010</span><span class="lvl must">MUST</span><span>Make you a code owner of the enforcement files</span></li><li><span class="rid">BRA-011</span><span class="lvl must">MUST NOT</span><span>Bypass protection</span></li><li><span class="rid">BRA-012</span><span class="lvl must">MUST</span><span>Protect release tags</span></li><li><span class="rid">BRA-013</span><span class="lvl should">SHOULD</span><span>Require signed commits on main</span></li></ul><p class="file">Source file: <code>standards/branching.md</code></p></details></article>
+<article class="gcard" id="g-pr"><div class="gtop"><span class="prefix">PR</span><h4>Pull requests</h4></div><div class="gmeta"><span class="lvl must">5 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: all</span></div><div class="based"><span class="k">Based on</span><a href="https://google.github.io/eng-practices/review/developer/small-cls.html">Google Engineering Practices, Small CLs</a><a href="https://google.github.io/eng-practices/review/developer/cl-descriptions.html">Google Engineering Practices, Writing good CL descriptions</a></div><details><summary>6 rules</summary><ul class="rules"><li><span class="rid">PR-001</span><span class="lvl must">MUST</span><span>Title the PR as a Conventional Commit line</span></li><li><span class="rid">PR-002</span><span class="lvl should">SHOULD</span><span>Keep a PR around 100 changed lines</span></li><li><span class="rid">PR-003</span><span class="lvl must">MUST</span><span>Fill in the description template</span></li><li><span class="rid">PR-004</span><span class="lvl must">MUST</span><span>Make one self-contained change</span></li><li><span class="rid">PR-005</span><span class="lvl must">MUST</span><span>Ship tests in the same PR as the code</span></li><li><span class="rid">PR-006</span><span class="lvl must">MUST</span><span>Open as draft until green; squash merge and delete the branch</span></li></ul><p class="file">Source file: <code>standards/pull-requests.md</code></p></details></article>
+<article class="gcard" id="g-rev"><div class="gtop"><span class="prefix">REV</span><h4>Code review</h4></div><div class="gmeta"><span class="lvl must">4 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: all</span></div><div class="based"><span class="k">Based on</span><a href="https://google.github.io/eng-practices/review/reviewer/standard.html">Google Engineering Practices, The Standard of Code Review</a><a href="https://google.github.io/eng-practices/review/reviewer/looking-for.html">Google Engineering Practices, What to look for in a code review</a><a href="https://conventionalcomments.org/">Conventional Comments</a></div><details><summary>5 rules</summary><ul class="rules"><li><span class="rid">REV-001</span><span class="lvl must">MUST</span><span>Approve once the change definitely improves overall code health</span></li><li><span class="rid">REV-002</span><span class="lvl must">MUST</span><span>Review in order of weight</span></li><li><span class="rid">REV-003</span><span class="lvl must">MUST</span><span>Label every comment and cite rule IDs</span></li><li><span class="rid">REV-004</span><span class="lvl must">MUST</span><span>Require a human approval for agent-written PRs</span></li><li><span class="rid">REV-005</span><span class="lvl should">SHOULD</span><span>Respond within one business day</span></li></ul><p class="file">Source file: <code>standards/code-review.md</code></p></details></article>
+</div></div>
+<div class="cat"><div class="cat-head"><h3>Security baseline</h3><p>For every repo, deployed or not.</p></div><div class="cards">
+<article class="gcard" id="g-sec"><div class="gtop"><span class="prefix">SEC</span><h4>Security baseline</h4></div><div class="gmeta"><span class="lvl must">5 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: all</span></div><div class="based"><span class="k">Based on</span><a href="https://csrc.nist.gov/pubs/sp/800/218/final">NIST SP 800-218 Secure Software Development Framework (SSDF)</a><a href="https://owasp.org/www-project-top-ten/">OWASP Top 10</a><a href="https://scorecard.dev/">OpenSSF Scorecard</a></div><details><summary>6 rules</summary><ul class="rules"><li><span class="rid">SEC-001</span><span class="lvl must">MUST NOT</span><span>Commit secrets</span></li><li><span class="rid">SEC-002</span><span class="lvl must">MUST</span><span>Commit lockfiles and automate dependency updates</span></li><li><span class="rid">SEC-003</span><span class="lvl must">MUST</span><span>Validate input at trust boundaries with a schema</span></li><li><span class="rid">SEC-004</span><span class="lvl should">SHOULD</span><span>Justify every new dependency in the PR</span></li><li><span class="rid">SEC-005</span><span class="lvl must">MUST NOT</span><span>Let an agent run destructive commands without confirmation</span></li><li><span class="rid">SEC-006</span><span class="lvl must">MUST</span><span>Run static analysis on every PR</span></li></ul><p class="file">Source file: <code>standards/security.md</code></p></details></article>
+</div></div>
+<div class="cat"><div class="cat-head"><h3>Frontend profile</h3><p>For repos with a React UI.</p></div><div class="cards">
+<article class="gcard" id="g-ui"><div class="gtop"><span class="prefix">UI</span><h4>React frontend</h4></div><div class="gmeta"><span class="lvl must">10 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: react-web</span></div><div class="based"><span class="k">Based on</span><a href="https://react.dev/reference/rules">Rules of React</a><a href="https://github.com/alan2207/bulletproof-react">bulletproof-react</a><a href="https://www.w3.org/TR/WCAG22/">WCAG 2.2</a><a href="https://web.dev/articles/vitals">Core Web Vitals</a></div><details><summary>11 rules</summary><ul class="rules"><li><span class="rid">UI-001</span><span class="lvl must">MUST</span><span>Use React with strict TypeScript</span></li><li><span class="rid">UI-002</span><span class="lvl must">MUST</span><span>Use Tailwind, shadcn/ui, lucide-react and Recharts</span></li><li><span class="rid">UI-003</span><span class="lvl must">MUST</span><span>Take every visual value from design tokens</span></li><li><span class="rid">UI-004</span><span class="lvl must">MUST</span><span>Follow the Rules of React</span></li><li><span class="rid">UI-005</span><span class="lvl must">MUST</span><span>Use TanStack Query, a generated API client, and Zod forms</span></li><li><span class="rid">UI-006</span><span class="lvl must">MUST</span><span>Organize code by feature</span></li><li><span class="rid">UI-007</span><span class="lvl must">MUST</span><span>Meet WCAG 2.2 AA</span></li><li><span class="rid">UI-008</span><span class="lvl must">MUST</span><span>Stay inside the Core Web Vitals budget</span></li><li><span class="rid">UI-009</span><span class="lvl must">MUST</span><span>Test with Vitest, Testing Library, Playwright and MSW</span></li><li><span class="rid">UI-010</span><span class="lvl must">MUST NOT</span><span>Store auth tokens in browser storage</span></li><li><span class="rid">UI-011</span><span class="lvl should">SHOULD</span><span>Design the four states of every screen</span></li></ul><p class="file">Source file: <code>standards/frontend.md</code></p></details></article>
+</div></div>
+<div class="cat"><div class="cat-head"><h3>Production pack</h3><p>For anything that is deployed.</p></div><div class="cards">
+<article class="gcard" id="g-auth"><div class="gtop"><span class="prefix">AUTH</span><h4>Authentication and authorization</h4></div><div class="gmeta"><span class="lvl must">8 MUST</span><span class="applies">applies to: deployed</span></div><div class="based"><span class="k">Based on</span><a href="https://www.rfc-editor.org/rfc/rfc9700">RFC 9700 (Best Current Practice for OAuth 2.0 Security)</a><a href="https://openid.net/specs/openid-connect-core-1_0.html">OpenID Connect Core 1.0</a><a href="https://pages.nist.gov/800-63-4/sp800-63b.html">NIST SP 800-63B</a><a href="https://www.rfc-editor.org/rfc/rfc8725">RFC 8725 (JWT Best Current Practices)</a><a href="https://owasp.org/www-project-application-security-verification-standard/">OWASP ASVS 5.0</a></div><details><summary>8 rules</summary><ul class="rules"><li><span class="rid">AUTH-001</span><span class="lvl must">MUST NOT</span><span>Write your own auth or crypto</span></li><li><span class="rid">AUTH-002</span><span class="lvl must">MUST</span><span>Use authorization code with PKCE, per RFC 9700</span></li><li><span class="rid">AUTH-003</span><span class="lvl must">MUST</span><span>Hash passwords with Argon2id and follow NIST 800-63B</span></li><li><span class="rid">AUTH-004</span><span class="lvl must">MUST</span><span>Keep browser sessions in hardened cookies</span></li><li><span class="rid">AUTH-005</span><span class="lvl must">MUST</span><span>Keep tokens short-lived and validate JWTs per RFC 8725</span></li><li><span class="rid">AUTH-006</span><span class="lvl must">MUST</span><span>Authorize every request on the server, deny by default</span></li><li><span class="rid">AUTH-007</span><span class="lvl must">MUST</span><span>Require MFA for privileged accounts</span></li><li><span class="rid">AUTH-008</span><span class="lvl must">MUST</span><span>Audit-log security events</span></li></ul><p class="file">Source file: <code>standards/production/auth.md</code></p></details></article>
+<article class="gcard" id="g-abu"><div class="gtop"><span class="prefix">ABU</span><h4>Rate limiting and abuse</h4></div><div class="gmeta"><span class="lvl must">4 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: deployed</span></div><div class="based"><span class="k">Based on</span><a href="https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/">OWASP API Security Top 10: API4:2023 Unrestricted Resource Consumption</a><a href="https://www.rfc-editor.org/rfc/rfc6585">RFC 6585 (429 Too Many Requests)</a><a href="https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/">IETF RateLimit header fields draft</a></div><details><summary>5 rules</summary><ul class="rules"><li><span class="rid">ABU-001</span><span class="lvl must">MUST</span><span>Rate limit every public endpoint per client and per user</span></li><li><span class="rid">ABU-002</span><span class="lvl must">MUST</span><span>Apply strict limits and lockout to auth routes</span></li><li><span class="rid">ABU-003</span><span class="lvl must">MUST</span><span>Return 429 with Retry-After</span></li><li><span class="rid">ABU-004</span><span class="lvl must">MUST</span><span>Limit request size, uploads, page size and query time</span></li><li><span class="rid">ABU-005</span><span class="lvl should">SHOULD</span><span>Put a CDN or WAF in front, with CAPTCHA only after failures</span></li></ul><p class="file">Source file: <code>standards/production/abuse.md</code></p></details></article>
+<article class="gcard" id="g-api"><div class="gtop"><span class="prefix">API</span><h4>API design</h4></div><div class="gmeta"><span class="lvl must">6 MUST</span><span class="applies">applies to: deployed</span></div><div class="based"><span class="k">Based on</span><a href="https://google.aip.dev/">Google API Improvement Proposals (AIP)</a><a href="https://spec.openapis.org/oas/v3.1.0">OpenAPI 3.1</a><a href="https://www.rfc-editor.org/rfc/rfc9457">RFC 9457 (Problem Details for HTTP APIs)</a><a href="https://owasp.org/API-Security/">OWASP API Security Top 10</a></div><details><summary>6 rules</summary><ul class="rules"><li><span class="rid">API-001</span><span class="lvl must">MUST</span><span>Design the contract first</span></li><li><span class="rid">API-002</span><span class="lvl must">MUST</span><span>Use resource-oriented design per Google AIP</span></li><li><span class="rid">API-003</span><span class="lvl must">MUST</span><span>Return RFC 9457 problem details</span></li><li><span class="rid">API-004</span><span class="lvl must">MUST</span><span>Paginate lists with page tokens and a maximum size</span></li><li><span class="rid">API-005</span><span class="lvl must">MUST</span><span>Accept an Idempotency-Key on retried unsafe operations</span></li><li><span class="rid">API-006</span><span class="lvl must">MUST</span><span>Version in the path and announce deprecations</span></li></ul><p class="file">Source file: <code>standards/production/api.md</code></p></details></article>
+<article class="gcard" id="g-web"><div class="gtop"><span class="prefix">WEB</span><h4>Web security</h4></div><div class="gmeta"><span class="lvl must">6 MUST</span><span class="applies">applies to: deployed</span></div><div class="based"><span class="k">Based on</span><a href="https://owasp.org/www-project-application-security-verification-standard/">OWASP ASVS 5.0</a><a href="https://owasp.org/www-project-secure-headers/">OWASP Secure Headers Project</a><a href="https://cheatsheetseries.owasp.org/">OWASP Cheat Sheet Series</a></div><details><summary>6 rules</summary><ul class="rules"><li><span class="rid">WEB-001</span><span class="lvl must">MUST</span><span>Use TLS everywhere, with HSTS</span></li><li><span class="rid">WEB-002</span><span class="lvl must">MUST</span><span>Send the OWASP recommended security headers</span></li><li><span class="rid">WEB-003</span><span class="lvl must">MUST</span><span>Use a CORS allowlist, never a wildcard with credentials</span></li><li><span class="rid">WEB-004</span><span class="lvl must">MUST</span><span>Protect cookie-authenticated changes against CSRF</span></li><li><span class="rid">WEB-005</span><span class="lvl must">MUST</span><span>Parameterize queries and allowlist outbound requests</span></li><li><span class="rid">WEB-006</span><span class="lvl must">MUST</span><span>Meet OWASP ASVS Level 1, and Level 2 with personal data</span></li></ul><p class="file">Source file: <code>standards/production/web-security.md</code></p></details></article>
+<article class="gcard" id="g-rel"><div class="gtop"><span class="prefix">REL</span><h4>Scaling and reliability</h4></div><div class="gmeta"><span class="lvl must">6 MUST</span><span class="lvl should">3 SHOULD</span><span class="applies">applies to: deployed</span></div><div class="based"><span class="k">Based on</span><a href="https://12factor.net/">The Twelve-Factor App</a><a href="https://sre.google/books/">Google SRE books</a><a href="https://aws.amazon.com/builders-library/">Amazon Builders&#x27; Library</a><a href="https://www.rfc-editor.org/rfc/rfc9111">RFC 9111 (HTTP Caching)</a></div><details><summary>9 rules</summary><ul class="rules"><li><span class="rid">REL-001</span><span class="lvl must">MUST</span><span>Follow the Twelve-Factor App</span></li><li><span class="rid">REL-002</span><span class="lvl must">MUST</span><span>Expose /livez and /readyz</span></li><li><span class="rid">REL-003</span><span class="lvl must">MUST</span><span>Set timeouts on every call, retry with backoff and jitter</span></li><li><span class="rid">REL-004</span><span class="lvl must">MUST</span><span>Pool connections and migrate with expand and contract</span></li><li><span class="rid">REL-005</span><span class="lvl must">MUST</span><span>Name the index for every query path</span></li><li><span class="rid">REL-006</span><span class="lvl should">SHOULD</span><span>Move slow or bursty work to a queue</span></li><li><span class="rid">REL-007</span><span class="lvl should">SHOULD</span><span>Give every cache a TTL and an owner</span></li><li><span class="rid">REL-008</span><span class="lvl must">MUST</span><span>Load test against the SLO before launch</span></li><li><span class="rid">REL-009</span><span class="lvl should">SHOULD</span><span>Autoscale on saturation and degrade before failing</span></li></ul><p class="file">Source file: <code>standards/production/reliability.md</code></p></details></article>
+<article class="gcard" id="g-obs"><div class="gtop"><span class="prefix">OBS</span><h4>Observability</h4></div><div class="gmeta"><span class="lvl must">4 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: deployed</span></div><div class="based"><span class="k">Based on</span><a href="https://opentelemetry.io/">OpenTelemetry</a><a href="https://www.w3.org/TR/trace-context/">W3C Trace Context</a><a href="https://sre.google/books/">Google SRE books: SLOs, alerting, golden signals</a></div><details><summary>5 rules</summary><ul class="rules"><li><span class="rid">OBS-001</span><span class="lvl must">MUST</span><span>Instrument with OpenTelemetry and propagate trace context</span></li><li><span class="rid">OBS-002</span><span class="lvl must">MUST</span><span>Define SLOs and alert on error-budget burn</span></li><li><span class="rid">OBS-003</span><span class="lvl must">MUST</span><span>Show the four golden signals</span></li><li><span class="rid">OBS-004</span><span class="lvl must">MUST</span><span>Link a runbook from every alert</span></li><li><span class="rid">OBS-005</span><span class="lvl should">SHOULD</span><span>Write a blameless postmortem for user-facing incidents</span></li></ul><p class="file">Source file: <code>standards/production/observability.md</code></p></details></article>
+<article class="gcard" id="g-ops"><div class="gtop"><span class="prefix">OPS</span><h4>Delivery and operations</h4></div><div class="gmeta"><span class="lvl must">7 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: deployed</span></div><div class="based"><span class="k">Based on</span><a href="https://slsa.dev/">SLSA</a><a href="https://cyclonedx.org/">CycloneDX</a><a href="https://www.sigstore.dev/">Sigstore</a><a href="https://dora.dev/">DORA</a><a href="https://openfeature.dev/">OpenFeature</a></div><details><summary>8 rules</summary><ul class="rules"><li><span class="rid">OPS-001</span><span class="lvl must">MUST</span><span>Choose the deploy target in an ADR and manage infrastructure as code</span></li><li><span class="rid">OPS-002</span><span class="lvl must">MUST</span><span>Build hardened, scanned container images</span></li><li><span class="rid">OPS-003</span><span class="lvl must">MUST</span><span>Ship an SBOM and provenance, and sign images</span></li><li><span class="rid">OPS-004</span><span class="lvl must">MUST</span><span>Deploy through staging with a tested one-command rollback</span></li><li><span class="rid">OPS-005</span><span class="lvl must">MUST</span><span>Keep secrets in a secret manager</span></li><li><span class="rid">OPS-006</span><span class="lvl must">MUST</span><span>Back up automatically and practice restores</span></li><li><span class="rid">OPS-007</span><span class="lvl must">MUST</span><span>Pass the production readiness review before launch</span></li><li><span class="rid">OPS-008</span><span class="lvl should">SHOULD</span><span>Ship risky changes behind flags and track DORA metrics</span></li></ul><p class="file">Source file: <code>standards/production/operations.md</code></p></details></article>
+<article class="gcard" id="g-dat"><div class="gtop"><span class="prefix">DAT</span><h4>Data and privacy</h4></div><div class="gmeta"><span class="lvl must">5 MUST</span><span class="applies">applies to: deployed</span></div><div class="based"><span class="k">Based on</span><a href="https://owasp.org/www-project-application-security-verification-standard/">OWASP ASVS 5.0 (data protection chapters)</a><a href="https://eur-lex.europa.eu/eli/reg/2016/679/oj">GDPR</a><span class="src">Local data protection law</span></div><details><summary>5 rules</summary><ul class="rules"><li><span class="rid">DAT-001</span><span class="lvl must">MUST</span><span>Classify every stored field</span></li><li><span class="rid">DAT-002</span><span class="lvl must">MUST</span><span>Encrypt in transit, at rest, and per field for sensitive data</span></li><li><span class="rid">DAT-003</span><span class="lvl must">MUST</span><span>Set and enforce a retention period per data class</span></li><li><span class="rid">DAT-004</span><span class="lvl must">MUST</span><span>Let users export and delete their data where the law requires</span></li><li><span class="rid">DAT-005</span><span class="lvl must">MUST NOT</span><span>Log personal data, tokens or secrets</span></li></ul><p class="file">Source file: <code>standards/production/data.md</code></p></details></article>
+</div></div>
+<div class="cat"><div class="cat-head"><h3>Opt-in packs</h3><p>Added per project.</p></div><div class="cards">
+<article class="gcard" id="g-emb"><div class="gtop"><span class="prefix">EMB</span><h4>Embedded C</h4></div><div class="gmeta"><span class="lvl must">6 MUST</span><span class="lvl should">1 SHOULD</span><span class="applies">applies to: pack</span></div><div class="based"><span class="k">Based on</span><span class="src">BARR-C:2018 Embedded C Coding Standard</span><span class="src">MISRA C:2023 (subset)</span></div><details><summary>7 rules</summary><ul class="rules"><li><span class="rid">EMB-001</span><span class="lvl must">MUST</span><span>Use fixed-width integer types</span></li><li><span class="rid">EMB-002</span><span class="lvl must">MUST NOT</span><span>Allocate heap memory after initialization</span></li><li><span class="rid">EMB-003</span><span class="lvl must">MUST</span><span>Declare ISR-shared data volatile and protect multi-byte access</span></li><li><span class="rid">EMB-004</span><span class="lvl must">MUST</span><span>Always use braces and handle every switch case</span></li><li><span class="rid">EMB-005</span><span class="lvl must">MUST</span><span>Check or explicitly discard every return value</span></li><li><span class="rid">EMB-006</span><span class="lvl must">MUST</span><span>Prefix public symbols with the module name and carry units</span></li><li><span class="rid">EMB-007</span><span class="lvl should">SHOULD</span><span>Build warning-free with static analysis</span></li></ul><p class="file">Source file: <code>standards/packs/embedded-c.md</code></p></details></article>
+<article class="gcard" id="g-llm"><div class="gtop"><span class="prefix">LLM</span><h4>LLM features</h4></div><div class="gmeta"><span class="lvl must">5 MUST</span><span class="lvl should">2 SHOULD</span><span class="applies">applies to: pack</span></div><div class="based"><span class="k">Based on</span><a href="https://genai.owasp.org/llm-top-10/">OWASP Top 10 for LLM Applications (2025)</a></div><details><summary>7 rules</summary><ul class="rules"><li><span class="rid">LLM-001</span><span class="lvl must">MUST</span><span>Treat all model input as possibly hostile (prompt injection)</span></li><li><span class="rid">LLM-002</span><span class="lvl must">MUST</span><span>Validate and encode model output before using it</span></li><li><span class="rid">LLM-003</span><span class="lvl must">MUST</span><span>Limit what the model can do (excessive agency)</span></li><li><span class="rid">LLM-004</span><span class="lvl must">MUST NOT</span><span>Put secrets or other users&#x27; data in prompts</span></li><li><span class="rid">LLM-005</span><span class="lvl must">MUST</span><span>Bound cost and consumption</span></li><li><span class="rid">LLM-006</span><span class="lvl should">SHOULD</span><span>Evaluate quality and show uncertainty</span></li><li><span class="rid">LLM-007</span><span class="lvl should">SHOULD</span><span>Pin and review models and model dependencies</span></li></ul><p class="file">Source file: <code>standards/packs/llm.md</code></p></details></article>
+<article class="gcard" id="g-mob"><div class="gtop"><span class="prefix">MOB</span><h4>Mobile apps</h4></div><div class="gmeta"><span class="lvl must">4 MUST</span><span class="lvl should">2 SHOULD</span><span class="applies">applies to: pack</span></div><div class="based"><span class="k">Based on</span><a href="https://mas.owasp.org/MASVS/">OWASP MASVS</a><a href="https://mas.owasp.org/MASTG/">OWASP MASTG</a></div><details><summary>6 rules</summary><ul class="rules"><li><span class="rid">MOB-001</span><span class="lvl must">MUST</span><span>Store secrets only in the platform keystore (MASVS-STORAGE, MASVS-CRYPTO)</span></li><li><span class="rid">MOB-002</span><span class="lvl must">MUST</span><span>Use TLS only and validate certificates (MASVS-NETWORK)</span></li><li><span class="rid">MOB-003</span><span class="lvl must">MUST</span><span>Authenticate with the system browser and PKCE (MASVS-AUTH)</span></li><li><span class="rid">MOB-004</span><span class="lvl must">MUST</span><span>Validate deep links and IPC input (MASVS-PLATFORM)</span></li><li><span class="rid">MOB-005</span><span class="lvl should">SHOULD</span><span>Keep the app updated and its dependencies scanned (MASVS-CODE)</span></li><li><span class="rid">MOB-006</span><span class="lvl should">SHOULD</span><span>Minimize data collection and declare it (MASVS-PRIVACY)</span></li></ul><p class="file">Source file: <code>standards/packs/mobile.md</code></p></details></article>
+</div></div>
+    </section>
+
+    <section id="sources">
+      <div class="sec-head"><span class="eyebrow">Standards used</span><h2>Built on 81 published standards</h2></div>
+      <p>Every source a rule group cites, most widely used first. The chips link to the groups that adopt it.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Standard</th><th>Used by</th></tr></thead>
+          <tbody>
+            <tr><td><a href="https://barrgroup.com/embedded-systems/books/embedded-c-coding-standard">BARR-C:2018 Embedded C Coding Standard</a></td><td><div class="chips"><a class="chip" href="#g-sty">STY</a><a class="chip" href="#g-nam">NAM</a><a class="chip" href="#g-emb">EMB</a></div></td></tr>
+<tr><td><a href="https://google.github.io/eng-practices/review/developer/cl-descriptions.html">Google Engineering Practices, Writing good CL descriptions</a></td><td><div class="chips"><a class="chip" href="#g-git">GIT</a><a class="chip" href="#g-pr">PR</a></div></td></tr>
+<tr><td><a href="https://google.github.io/styleguide/">Google Style Guides</a></td><td><div class="chips"><a class="chip" href="#g-sty">STY</a><a class="chip" href="#g-nam">NAM</a></div></td></tr>
+<tr><td><a href="https://owasp.org/www-project-application-security-verification-standard/">OWASP ASVS 5.0</a></td><td><div class="chips"><a class="chip" href="#g-auth">AUTH</a><a class="chip" href="#g-web">WEB</a></div></td></tr>
+<tr><td><a href="https://slsa.dev/">SLSA</a></td><td><div class="chips"><a class="chip" href="#g-bra">BRA</a><a class="chip" href="#g-ops">OPS</a></div></td></tr>
+<tr><td><a href="https://adr.github.io/">ADR GitHub organization</a></td><td><div class="chips"><a class="chip" href="#g-adr">ADR</a></div></td></tr>
+<tr><td><a href="https://aws.amazon.com/builders-library/">Amazon Builders&#x27; Library</a></td><td><div class="chips"><a class="chip" href="#g-rel">REL</a></div></td></tr>
+<tr><td><a href="https://docs.aws.amazon.com/prescriptive-guidance/latest/architectural-decision-records/adr-process.html">AWS Prescriptive Guidance, &quot;ADR process</a></td><td><div class="chips"><a class="chip" href="#g-adr">ADR</a></div></td></tr>
+<tr><td><a href="https://github.com/alan2207/bulletproof-react">bulletproof-react</a></td><td><div class="chips"><a class="chip" href="#g-ui">UI</a></div></td></tr>
+<tr><td><a href="https://c4model.com/">C4 model</a></td><td><div class="chips"><a class="chip" href="#g-doc">DOC</a></div></td></tr>
+<tr><td><a href="https://conventionalcomments.org/">Conventional Comments</a></td><td><div class="chips"><a class="chip" href="#g-rev">REV</a></div></td></tr>
+<tr><td><a href="https://www.conventionalcommits.org/en/v1.0.0/">Conventional Commits 1.0.0</a></td><td><div class="chips"><a class="chip" href="#g-git">GIT</a></div></td></tr>
+<tr><td><a href="https://web.dev/articles/vitals">Core Web Vitals</a></td><td><div class="chips"><a class="chip" href="#g-ui">UI</a></div></td></tr>
+<tr><td><a href="https://cyclonedx.org/">CycloneDX</a></td><td><div class="chips"><a class="chip" href="#g-ops">OPS</a></div></td></tr>
+<tr><td><a href="https://www.industrialempathy.com/posts/design-docs-at-google/">Design docs at Google</a></td><td><div class="chips"><a class="chip" href="#g-sdd">SDD</a></div></td></tr>
+<tr><td><a href="&quot;&quot;">dev-standard (agent-specific)</a></td><td><div class="chips"><a class="chip" href="#g-agt">AGT</a></div></td></tr>
+<tr><td><a href="https://diataxis.fr/">Diátaxis</a></td><td><div class="chips"><a class="chip" href="#g-doc">DOC</a></div></td></tr>
+<tr><td><a href="https://dora.dev/">DORA</a></td><td><div class="chips"><a class="chip" href="#g-ops">OPS</a></div></td></tr>
+<tr><td><a href="https://dora.dev/capabilities/trunk-based-development/">DORA capability &quot;Trunk-based development</a></td><td><div class="chips"><a class="chip" href="#g-bra">BRA</a></div></td></tr>
+<tr><td><a href="https://www.designcouncil.org.uk/our-resources/the-double-diamond/">Double Diamond (Design Council)</a></td><td><div class="chips"><a class="chip" href="#g-brn">BRN</a></div></td></tr>
+<tr><td><a href="https://alistairmavin.com/ears/">EARS (Easy Approach to Requirements Syntax)</a></td><td><div class="chips"><a class="chip" href="#g-sdd">SDD</a></div></td></tr>
+<tr><td><a href="https://eur-lex.europa.eu/eli/reg/2016/679/oj">GDPR</a></td><td><div class="chips"><a class="chip" href="#g-dat">DAT</a></div></td></tr>
+<tr><td><a href="https://git-scm.com/docs/git-blame#Documentation/git-blame.txt---ignore-revs-fileltfilegt">git blame --ignore-revs-file</a></td><td><div class="chips"><a class="chip" href="#g-ins">INS</a></div></td></tr>
+<tr><td><a href="https://git-scm.com/book/en/v2/Git-Tools-Submodules">Git submodules</a></td><td><div class="chips"><a class="chip" href="#g-ins">INS</a></div></td></tr>
+<tr><td><a href="https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets">GitHub rulesets</a></td><td><div class="chips"><a class="chip" href="#g-bra">BRA</a></div></td></tr>
+<tr><td><a href="https://github.com/github/spec-kit">GitHub Spec Kit</a></td><td><div class="chips"><a class="chip" href="#g-sdd">SDD</a></div></td></tr>
+<tr><td><a href="https://google.aip.dev/">Google API Improvement Proposals (AIP)</a></td><td><div class="chips"><a class="chip" href="#g-api">API</a></div></td></tr>
+<tr><td><a href="https://cloud.google.com/architecture/architecture-decision-records">Google Cloud, &quot;Architecture decision records overview</a></td><td><div class="chips"><a class="chip" href="#g-adr">ADR</a></div></td></tr>
+<tr><td><a href="https://developers.google.com/style">Google developer documentation style guide</a></td><td><div class="chips"><a class="chip" href="#g-doc">DOC</a></div></td></tr>
+<tr><td><a href="https://google.github.io/eng-practices/review/developer/small-cls.html">Google Engineering Practices, Small CLs</a></td><td><div class="chips"><a class="chip" href="#g-pr">PR</a></div></td></tr>
+<tr><td><a href="https://google.github.io/eng-practices/review/developer/">Google Engineering Practices, The CL author&#x27;s guide</a></td><td><div class="chips"><a class="chip" href="#g-agt">AGT</a></div></td></tr>
+<tr><td><a href="https://google.github.io/eng-practices/review/reviewer/standard.html">Google Engineering Practices, The Standard of Code Review</a></td><td><div class="chips"><a class="chip" href="#g-rev">REV</a></div></td></tr>
+<tr><td><a href="https://google.github.io/eng-practices/review/reviewer/looking-for.html">Google Engineering Practices, What to look for in a code review</a></td><td><div class="chips"><a class="chip" href="#g-rev">REV</a></div></td></tr>
+<tr><td><a href="https://sre.google/books/">Google SRE books</a></td><td><div class="chips"><a class="chip" href="#g-rel">REL</a></div></td></tr>
+<tr><td><a href="https://sre.google/books/">Google SRE books: SLOs, alerting, golden signals</a></td><td><div class="chips"><a class="chip" href="#g-obs">OBS</a></div></td></tr>
+<tr><td><a href="https://testing.googleblog.com/">Google Testing Blog</a></td><td><div class="chips"><a class="chip" href="#g-tst">TST</a></div></td></tr>
+<tr><td><a href="https://www.gv.com/sprint/">GV Design Sprint</a></td><td><div class="chips"><a class="chip" href="#g-brn">BRN</a></div></td></tr>
+<tr><td><a href="&quot;&quot;">ICE scoring</a></td><td><div class="chips"><a class="chip" href="#g-brn">BRN</a></div></td></tr>
+<tr><td><a href="https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/">IETF RateLimit header fields draft</a></td><td><div class="chips"><a class="chip" href="#g-abu">ABU</a></div></td></tr>
+<tr><td><a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog 1.1.0</a></td><td><div class="chips"><a class="chip" href="#g-doc">DOC</a></div></td></tr>
+<tr><td>Local data protection law</td><td><div class="chips"><a class="chip" href="#g-dat">DAT</a></div></td></tr>
+<tr><td><a href="https://adr.github.io/madr/">MADR (Markdown Architectural Decision Records)</a></td><td><div class="chips"><a class="chip" href="#g-doc">DOC</a></div></td></tr>
+<tr><td><a href="https://adr.github.io/madr/">MADR 4</a></td><td><div class="chips"><a class="chip" href="#g-adr">ADR</a></div></td></tr>
+<tr><td><a href="https://martinfowler.com/bliki/StranglerFigApplication.html">Martin Fowler, &quot;Strangler Fig Application</a></td><td><div class="chips"><a class="chip" href="#g-ins">INS</a></div></td></tr>
+<tr><td><a href="https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions">Michael Nygard, &quot;Documenting Architecture Decisions</a></td><td><div class="chips"><a class="chip" href="#g-adr">ADR</a></div></td></tr>
+<tr><td><a href="https://misra.org.uk/">MISRA C:2023</a></td><td><div class="chips"><a class="chip" href="#g-sty">STY</a></div></td></tr>
+<tr><td>MISRA C:2023 (subset)</td><td><div class="chips"><a class="chip" href="#g-emb">EMB</a></div></td></tr>
+<tr><td><a href="https://csrc.nist.gov/pubs/sp/800/218/final">NIST SP 800-218 Secure Software Development Framework (SSDF)</a></td><td><div class="chips"><a class="chip" href="#g-sec">SEC</a></div></td></tr>
+<tr><td><a href="https://pages.nist.gov/800-63-4/sp800-63b.html">NIST SP 800-63B</a></td><td><div class="chips"><a class="chip" href="#g-auth">AUTH</a></div></td></tr>
+<tr><td><a href="https://spec.openapis.org/oas/v3.1.0">OpenAPI 3.1</a></td><td><div class="chips"><a class="chip" href="#g-api">API</a></div></td></tr>
+<tr><td><a href="https://openfeature.dev/">OpenFeature</a></td><td><div class="chips"><a class="chip" href="#g-ops">OPS</a></div></td></tr>
+<tr><td><a href="https://openid.net/specs/openid-connect-core-1_0.html">OpenID Connect Core 1.0</a></td><td><div class="chips"><a class="chip" href="#g-auth">AUTH</a></div></td></tr>
+<tr><td><a href="https://scorecard.dev/">OpenSSF Scorecard</a></td><td><div class="chips"><a class="chip" href="#g-sec">SEC</a></div></td></tr>
+<tr><td><a href="https://github.com/ossf/scorecard/blob/main/docs/checks.md#branch-protection">OpenSSF Scorecard, Branch-Protection check</a></td><td><div class="chips"><a class="chip" href="#g-bra">BRA</a></div></td></tr>
+<tr><td><a href="https://opentelemetry.io/">OpenTelemetry</a></td><td><div class="chips"><a class="chip" href="#g-obs">OBS</a></div></td></tr>
+<tr><td><a href="https://owasp.org/API-Security/">OWASP API Security Top 10</a></td><td><div class="chips"><a class="chip" href="#g-api">API</a></div></td></tr>
+<tr><td><a href="https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/">OWASP API Security Top 10: API4:2023 Unrestricted Resource Consumption</a></td><td><div class="chips"><a class="chip" href="#g-abu">ABU</a></div></td></tr>
+<tr><td><a href="https://owasp.org/www-project-application-security-verification-standard/">OWASP ASVS 5.0 (data protection chapters)</a></td><td><div class="chips"><a class="chip" href="#g-dat">DAT</a></div></td></tr>
+<tr><td><a href="https://cheatsheetseries.owasp.org/">OWASP Cheat Sheet Series</a></td><td><div class="chips"><a class="chip" href="#g-web">WEB</a></div></td></tr>
+<tr><td><a href="https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html">OWASP Logging Cheat Sheet</a></td><td><div class="chips"><a class="chip" href="#g-err">ERR</a></div></td></tr>
+<tr><td><a href="https://mas.owasp.org/MASTG/">OWASP MASTG</a></td><td><div class="chips"><a class="chip" href="#g-mob">MOB</a></div></td></tr>
+<tr><td><a href="https://mas.owasp.org/MASVS/">OWASP MASVS</a></td><td><div class="chips"><a class="chip" href="#g-mob">MOB</a></div></td></tr>
+<tr><td><a href="https://owasp.org/www-project-secure-headers/">OWASP Secure Headers Project</a></td><td><div class="chips"><a class="chip" href="#g-web">WEB</a></div></td></tr>
+<tr><td><a href="https://owasp.org/www-project-top-ten/">OWASP Top 10</a></td><td><div class="chips"><a class="chip" href="#g-sec">SEC</a></div></td></tr>
+<tr><td><a href="https://genai.owasp.org/llm-top-10/">OWASP Top 10 for LLM Applications (2025)</a></td><td><div class="chips"><a class="chip" href="#g-llm">LLM</a></div></td></tr>
+<tr><td><a href="https://www.rfc-editor.org/rfc/rfc6585">RFC 6585 (429 Too Many Requests)</a></td><td><div class="chips"><a class="chip" href="#g-abu">ABU</a></div></td></tr>
+<tr><td><a href="https://www.rfc-editor.org/rfc/rfc8725">RFC 8725 (JWT Best Current Practices)</a></td><td><div class="chips"><a class="chip" href="#g-auth">AUTH</a></div></td></tr>
+<tr><td><a href="https://www.rfc-editor.org/rfc/rfc9111">RFC 9111 (HTTP Caching)</a></td><td><div class="chips"><a class="chip" href="#g-rel">REL</a></div></td></tr>
+<tr><td><a href="https://www.rfc-editor.org/rfc/rfc9457">RFC 9457 (Problem Details for HTTP APIs)</a></td><td><div class="chips"><a class="chip" href="#g-api">API</a></div></td></tr>
+<tr><td><a href="https://www.rfc-editor.org/rfc/rfc9700">RFC 9700 (Best Current Practice for OAuth 2.0 Security)</a></td><td><div class="chips"><a class="chip" href="#g-auth">AUTH</a></div></td></tr>
+<tr><td><a href="https://react.dev/reference/rules">Rules of React</a></td><td><div class="chips"><a class="chip" href="#g-ui">UI</a></div></td></tr>
+<tr><td><a href="https://semver.org/">Semantic Versioning 2.0.0</a></td><td><div class="chips"><a class="chip" href="#g-git">GIT</a></div></td></tr>
+<tr><td><a href="https://basecamp.com/shapeup">Shape Up (Basecamp)</a></td><td><div class="chips"><a class="chip" href="#g-brn">BRN</a></div></td></tr>
+<tr><td><a href="https://www.sigstore.dev/">Sigstore</a></td><td><div class="chips"><a class="chip" href="#g-ops">OPS</a></div></td></tr>
+<tr><td><a href="https://abseil.io/resources/swe-book">Software Engineering at Google (Winters, Manshreck, Wright)</a></td><td><div class="chips"><a class="chip" href="#g-tst">TST</a></div></td></tr>
+<tr><td><a href="https://abseil.io/resources/swe-book/html/ch16.html">Software Engineering at Google, ch. 16 &quot;Version Control and Branch Management</a></td><td><div class="chips"><a class="chip" href="#g-bra">BRA</a></div></td></tr>
+<tr><td><a href="https://abseil.io/resources/swe-book/html/ch22.html">Software Engineering at Google, ch. 22 &quot;Large-Scale Changes</a></td><td><div class="chips"><a class="chip" href="#g-ins">INS</a></div></td></tr>
+<tr><td><a href="https://12factor.net/">The Twelve-Factor App</a></td><td><div class="chips"><a class="chip" href="#g-rel">REL</a></div></td></tr>
+<tr><td><a href="https://trunkbaseddevelopment.com/">Trunk Based Development</a></td><td><div class="chips"><a class="chip" href="#g-bra">BRA</a></div></td></tr>
+<tr><td><a href="https://www.w3.org/TR/trace-context/">W3C Trace Context</a></td><td><div class="chips"><a class="chip" href="#g-obs">OBS</a></div></td></tr>
+<tr><td><a href="https://www.w3.org/TR/WCAG22/">WCAG 2.2</a></td><td><div class="chips"><a class="chip" href="#g-ui">UI</a></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="stack">
+      <div class="sec-head"><span class="eyebrow">Stack and repo</span><h2>Defaults and layout</h2></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Layer</th><th>Default</th><th>Change it with</th></tr></thead>
+          <tbody>
+            <tr><td>Backend</td><td>FastAPI, Python 3.12+, uv, Pydantic v2, SQLAlchemy 2 and Alembic</td><td><code>python-api</code> profile</td></tr>
+            <tr><td>Frontend</td><td>React and TypeScript on Vite (Next.js only for SEO), Tailwind, shadcn/ui, lucide-react, Recharts</td><td>an ADR (UI-002)</td></tr>
+            <tr><td>Auth</td><td>Keycloak over OIDC, with FastAPI holding an HttpOnly session for the browser</td><td>an ADR (AUTH-001)</td></tr>
+            <tr><td>Deploy</td><td>Containers (Dockerfile and compose); target chosen before the first deploy</td><td>an ADR (OPS-001)</td></tr>
+            <tr><td>Agents</td><td>Claude Code first; <code>AGENTS.md</code> for every other agent</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="tree">dev-standard/
+├── INSTALL.md               the runbook the agent follows
+├── install/interview.md     the questions it asks, and what each answer changes
+├── standards/               the rules, one file per group
+├── templates/               files merged into your repo
+├── profiles/                base, python-api, react-web config fragments
+├── enforce/hooks/           the Claude Code hooks
+├── cli/dev-standard         the CI checks
+├── .claude-plugin/          plugin and marketplace
+├── tests/                   tests for the hooks and the CLI
+└── docs/adr/                dev-standard's own decision log</pre>
+      <div class="links">
+        <a href="https://github.com/HDElectronics/dev-standard">Repository on GitHub</a>
+        <a href="https://claude.ai/artifact/XAT5anJJD9PpjND8CLMjqd">Try the brainstorm board</a>
+      </div>
+      <footer>Generated by <code>docs/guide/build.py</code> from the repository's own files. Rule counts, the catalog, the source index, the interview rounds and the terminal output all come from the repo, so rebuilding the page keeps it current.</footer>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs [role="tab"]'));
+  function select(tab) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute("aria-selected", String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+    });
+  }
+  tabs.forEach(function (tab, i) {
+    tab.tabIndex = i === 0 ? 0 : -1;
+    tab.addEventListener("click", function () { select(tab); });
+    tab.addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      var next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+      next.focus(); select(next);
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".copy"), function (button) {
+    button.addEventListener("click", function () {
+      var text = button.getAttribute("data-copy");
+      function done(label) { button.textContent = label; setTimeout(function () { button.textContent = "Copy"; }, 1600); }
+      function fallback() {
+        var range = document.createRange();
+        range.selectNodeContents(button.parentNode.querySelector("pre"));
+        var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+        done("Press Ctrl+C");
+      }
+      try { navigator.clipboard.writeText(text).then(function () { done("Copied"); }, fallback); }
+      catch (e) { fallback(); }
+    });
+  });
+})();
+</script>
+
+</html>
