@@ -1,0 +1,40 @@
+# Changelog
+
+All notable changes to dev-standard are listed here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
+[Semantic Versioning](https://semver.org/). A MAJOR version adds or tightens MUST rules, a
+MINOR version adds SHOULD or MAY rules, templates or profiles, and a PATCH version fixes
+wording or tooling without changing what a rule requires.
+
+## [Unreleased]
+
+### Planned
+
+- `dev-standard init` and `sync`.
+- Spectral ruleset for OpenAPI contracts (`profiles/python-api/.spectral.yaml`).
+- Pinned versions for CI actions and container images now shown as `<pinned-version>`.
+- A test install of the Spec Kit template additions against current Spec Kit.
+- `c-embedded` profile.
+- A trial install in a real repository, following `INSTALL.md` end to end.
+
+## [0.1.0] - 2026-10-18
+
+### Added
+
+- Standards: AGT, INS, BRN, SDD, NAM, STY, GIT, BRA, PR, REV, DOC, ADR, TST, SEC, ERR, UI; production
+  pack AUTH, ABU, API, WEB, REL, OBS, OPS, DAT; packs EMB, LLM, MOB.
+- `INSTALL.md`: agent runbook to discover, assess, propose, apply, verify and hand off.
+- Brainstorm board template with JSON seed and `brainstorm.md` export.
+- Spec Kit template additions, constitution, AGENTS.md, CLAUDE.md, PR, ADR, PRR, runbook and
+  adoption report templates.
+- Profiles: `base`, `python-api`, `react-web`.
+- Claude Code hooks: `guard-approvals`, `require-brainstorm`, `require-spec`, `no-bypass`,
+  `format-file`, `definition-of-done`.
+- Schema for `.dev-standard.json`.
+- GitHub rulesets for `main` (team and solo) and release tags, `CODEOWNERS`, ADR index and ADR 0001.
+- Hooks block agents from accepting ADRs and from `gh pr merge --admin`, and ask before ruleset changes.
+- `cli/dev-standard check`: manifest, branch, spec, brainstorm, trace, adr, pr, docs and deps checks,
+  reporting at each group's enforcement level; `standard` CI job in the base profile.
+- Claude Code plugin (`.claude-plugin/`, `plugin/hooks.json`); hooks do nothing without `.dev-standard.json`.
+- Hooks in warn mode tell the agent through `additionalContext` instead of a stderr notice.
+- Tests for hooks and CLI (`tests/`), CI for this repo, and this repo's ADRs 0001 to 0006.
