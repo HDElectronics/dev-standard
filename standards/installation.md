@@ -79,7 +79,7 @@ feature work. Each is its own PR, produced by a tool, and its commit hash is add
 
 ### INS-007 · MUST · Roll out checks from warn to block
 
-Groups that only affect new work (`AGT`, `BRN`, `SDD`, `GIT`) start at `block`. Every other
+Groups that only affect new work (`AGT`, `BRN`, `SDD`, `GIT`, `BRA`) start at `block`. Every other
 group starts at `warn` and moves to `block` once its checks are green on the base branch.
 Levels are set per group in `.dev-standard.json` under `enforcement.groups`.
 
@@ -124,6 +124,36 @@ When instructions conflict, agents follow this order:
 
 - **Why:** The standard serves the repo. It must never override a decision the user already made.
 - **Check:** advisory.
+
+### INS-012 · MUST · Ask about what the repo can't answer, with a recommendation
+
+The install is an interview ([install/interview.md](../install/interview.md)). The agent asks
+the user about every decision that discovery can't settle, and never asks about what the repo
+already shows. Each question states the evidence, offers 2 to 4 options with the recommended
+one first, and comes in rounds of at most 4 questions. In Claude Code the agent uses the
+AskUserQuestion tool; other agents ask numbered questions in chat and wait.
+
+- **Why:** Guessing at a deployment target or a team size produces the wrong profile and the wrong protection. Asking about things the files already show wastes the user's attention and hides the questions that matter.
+- **Check:** advisory. The interview log (INS-013) shows each question with its evidence.
+
+### INS-013 · MUST · Log every answer in the adoption report
+
+Each answer goes into the Interview section of `docs/dev-standard/adoption-report.md` as soon
+as it is given: question ID, answer, and whether the user gave it or it was assumed in Quick
+mode. The report's `Phase` field records where the install is. An agent that starts an install
+reads the log first and resumes from the first unanswered round (`Q-RESUME-1`).
+
+- **Why:** Installs get interrupted. The log lets any agent continue without asking twice, and it is the audit trail for why the repo is configured the way it is.
+- **Check:** advisory. The adoption PR includes the report.
+
+### INS-014 · MUST · Ask right before each action outside the repo
+
+Even after the plan is approved, and in every mode, the agent asks again immediately before an
+action that reaches outside the working tree: network installs (Spec Kit), installing tools,
+pushing, opening a PR, and changing settings on the Git host such as branch protection.
+
+- **Why:** Approving a plan is not approving each command that touches shared systems, and the user may want to run those commands themselves.
+- **Check:** `no-bypass.sh` also asks before ruleset and branch protection changes.
 
 ## Reference
 

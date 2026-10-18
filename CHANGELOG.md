@@ -8,6 +8,22 @@ wording or tooling without changing what a rule requires.
 
 ## [Unreleased]
 
+### Added
+
+- Interactive install: `install/interview.md` defines the question rounds (start, confirm,
+  scope, conflicts, approval, outside actions, hand-off), each with when to ask, a recommended
+  option and what the answer changes. Guided, Quick and Report-only modes.
+- `INS-012` (ask what the repo can't answer, with a recommendation), `INS-013` (log every
+  answer; resume from the log), `INS-014` (ask before each action outside the repo).
+- `/dev-standard:install` plugin command.
+- Adoption report: `Phase`, `Mode` and an interview log.
+
+### Changed
+
+- Install commands use https://github.com/HDElectronics/dev-standard and pin the latest
+  release tag, or `main` while there is none.
+- `BRA` starts at `block` with the other workflow groups (`INS-007`).
+
 ### Planned
 
 - `dev-standard init` and `sync`.

@@ -1,6 +1,8 @@
 <!--
-  dev-standard adoption report. The installing agent writes this file in Phase 1-3 of
-  .dev-standard/INSTALL.md and changes nothing else until the user approves Section 5.
+  dev-standard adoption report. The installing agent writes this file in Phases 0-3 of
+  .dev-standard/INSTALL.md and changes nothing else until the user approves the plan
+  (Q-APPROVE-1). It is also the install's state: an agent resuming an install reads Phase
+  and the Interview log first (INS-013).
 -->
 # dev-standard adoption report
 
@@ -9,6 +11,8 @@
 - **Date**: {{DATE}}
 - **Prepared by**: {{AGENT}} for {{USER}}
 - **Status**: Proposed  <!-- Proposed | Approved | Applied -->
+- **Phase**: Discover  <!-- Discover | Assess | Propose | Apply | Verify | Applied -->
+- **Mode**: {{MODE}}  <!-- Guided | Quick | Report only (Q-START-1) -->
 
 ## 1. What this repo is today
 
@@ -103,10 +107,15 @@ Each step is one commit, Conventional Commits format, on branch `chore/adopt-dev
 7. `chore: add branch protection rulesets`: `.github/rulesets/`, `CODEOWNERS`. You apply them on GitHub (admin action).
 8. Separate PRs, later: any reformat, rename or migration listed in Section 4.
 
-## 6. Questions for you
+## 6. Interview log
 
-1. …
+Every question asked during the install and its answer (INS-013), in order. `By` is `user`, or
+`assumed` when Quick mode took the recommended option without asking.
+
+| Round | Question | Asked | Answer | By |
+|-------|----------|-------|--------|----|
+| 0 | Q-START-1 Install mode | How do you want to run the install? | | |
 
 ## 7. Approval
 
-- [ ] I approve Sections 2 to 5. Approved by: ______ Date: ______
+- [ ] Plan approved in Q-APPROVE-1. Approved by: ______ Date: ______

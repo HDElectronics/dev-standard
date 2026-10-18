@@ -8,7 +8,10 @@
     "code-review",
     "hooks"
   ],
-  "commands": "./templates/.claude/commands/",
+  "commands": [
+    "./templates/.claude/commands/",
+    "./plugin/commands/install.md"
+  ],
   "agents": [
     "./templates/.claude/agents/standard-reviewer.md"
   ],

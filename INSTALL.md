@@ -1,41 +1,52 @@
 # Installing dev-standard
 
-This file is a runbook for a coding agent. A person adds dev-standard to their repository and
-says to their agent:
+This file is a runbook for a coding agent. The install is an interview: the agent studies the
+repo, asks the user about whatever the repo can't tell it, and applies only what the user
+approved. Start it in one of two ways:
 
-> Install dev-standard: follow `.dev-standard/INSTALL.md`.
+- With the dev-standard Claude Code plugin: run `/dev-standard:install`.
+- In any agent: say *"Install dev-standard: follow `.dev-standard/INSTALL.md`"*, or, if the repo
+  doesn't have it yet, *"Install dev-standard from https://github.com/HDElectronics/dev-standard
+  by following its INSTALL.md"*.
 
-The agent then works through the phases below in order. The rules behind each step are in
+The agent works through the phases below in order. Each **Ask** step is a round of questions
+from [install/interview.md](install/interview.md), which says what to ask, when to skip a
+question, and what each answer changes. The rules behind each step are in
 [standards/installation.md](standards/installation.md) (`INS-*`).
 
-**Agent: three rules hold for the whole install.**
+**Agent: four rules hold for the whole install.**
 
 1. Phases 1 to 3 are read-only, apart from writing the adoption report (INS-001).
-2. Stop at the end of Phase 3 and wait for the user's approval (INS-002).
-3. Never overwrite or delete an existing file. Merge into it (INS-003).
+2. Ask before deciding: anything the repo doesn't answer is a question to the user, with your
+   recommendation and the evidence for it (INS-012). Log each answer in the report (INS-013).
+3. Apply nothing until the user approves the plan in `Q-APPROVE-1` (INS-002), and ask again
+   right before each action outside the repo (INS-014).
+4. Never overwrite or delete an existing file. Merge into it (INS-003).
 
 ---
 
-## Phase 0 · Add dev-standard to the repo (done by the person, or by the agent when asked)
+## Phase 0 · Start
 
-Pin a release tag (INS-009).
+**Ask: Round 0** (`Q-RESUME-1`, `Q-START-1` to `Q-START-3`): resume or restart, install mode,
+how to add dev-standard, uncommitted changes.
 
-```bash
-git submodule add <DEV_STANDARD_GIT_URL> .dev-standard
-git -C .dev-standard checkout v0.1.0
-git add .gitmodules .dev-standard
-```
+1. Add dev-standard if it isn't there yet, the way the user chose in `Q-START-2`. Pin the latest
+   release tag (INS-009), or `main` if there is no release yet, and record which:
 
-If the repo can't use submodules, copy a release into `.dev-standard/` instead and note the
-version in the adoption report.
+   ```bash
+   git submodule add https://github.com/HDElectronics/dev-standard.git .dev-standard
+   tag=$(git -C .dev-standard tag --list 'v*' --sort=-v:refname | head -n 1)
+   [ -n "$tag" ] && git -C .dev-standard checkout "$tag"
+   git add .gitmodules .dev-standard
+   ```
 
-Then the agent:
-
-1. Confirms the working tree is clean (`git status --porcelain` prints nothing). If it isn't,
-   stop and ask the user to commit or stash.
-2. Creates the branch `chore/adopt-dev-standard` from the default branch.
-3. Reads `.dev-standard/README.md`, `.dev-standard/standards/README.md` and
-   `.dev-standard/standards/installation.md`.
+   For a vendored copy, download that release into `.dev-standard/` instead.
+2. Handle uncommitted changes as the user chose in `Q-START-3`. Never discard them.
+3. Create the branch `chore/adopt-dev-standard` from the default branch.
+4. Read `.dev-standard/README.md`, `.dev-standard/standards/README.md`,
+   `.dev-standard/standards/installation.md` and `.dev-standard/install/interview.md`.
+5. Copy the report template to `docs/dev-standard/adoption-report.md`, set its `Phase` to
+   `Discover`, and log the Round 0 answers.
 
 ## Phase 1 · Discover (read-only)
 
@@ -68,13 +79,20 @@ Also list the conventions the repo clearly follows, even where they differ from
 dev-standard. These become the "Repo-specific conventions" block in `AGENTS.md`, so future
 agents keep them.
 
-**Greenfield shortcut.** For a new repo, skip the rule-by-rule assessment in Phase 2: propose
-profiles from the intended stack, set every group to `block`, and note "greenfield" in the
-report. Phases 3 to 6 still apply.
+**Greenfield shortcut.** For a new repo, skip the rule-by-rule assessment in Phase 2: ask about
+the intended stack in Round 2 instead of detecting it, recommend `Strict` in `Q-SCOPE-3`, and note
+"greenfield" in the report. Phases 3 to 6 still apply.
+
+**Ask: Round 1** (`Q-REPO-1` to `Q-REPO-4`): confirm the discovery summary, deployment, who works
+on the repo, and the agent's GitHub identity. Apply the user's corrections to Section 1 before
+assessing.
 
 ## Phase 2 · Assess (read-only)
 
-1. **Choose profiles** (report Section 2):
+**Ask: Round 2** (`Q-SCOPE-1` to `Q-SCOPE-4`) once steps 1 to 3 below have produced your
+recommendations: profiles, packs, strictness, and the fast check command.
+
+1. **Recommend profiles** (report Section 2):
    - `base`: always.
    - `python-api`: a Python backend (FastAPI is the default stack).
    - `react-web`: a React frontend. If the repo has a frontend in another framework, do not
@@ -96,19 +114,24 @@ report. Phases 3 to 6 still apply.
 6. **Prefer existing tools** that meet a rule (INS-010). For example, keep `pre-commit` and add
    the gitleaks and commitlint hooks there instead of adding lefthook.
 
-## Phase 3 · Propose, then stop
+**Ask: Round 3** (`Q-CONFLICT-n`, `Q-CONFLICT-AGENTS`, `Q-WAIVER-EXPIRY`): one question per
+conflict, four per round, until every conflict in Section 4 has a decision.
 
-1. Fill Sections 5 (rollout plan) and 6 (questions) of the report.
+## Phase 3 · Propose and approve
+
+1. Fill Section 5 (rollout plan) of the report from the answers so far, and set `Phase` to
+   `Propose`.
 2. Commit only the report: `docs: add dev-standard adoption report`.
-3. Show the user a short summary: profiles, the conflicts, the proposed waivers, and the
-   questions.
-4. **Stop.** Continue only after the user approves. Apply their answers to the report and set
-   its status to `Approved`.
+3. In **Report only** mode, stop here and tell the user where the report is.
+4. **Ask: Round 4** (`Q-APPROVE-1`): show the plan and ask for approval. If the user wants
+   changes, go back to the round they belong to, then ask `Q-APPROVE-1` again. Continue only on
+   "Approve and apply": set the report's status to `Approved` and `Phase` to `Apply`.
 
 ## Phase 4 · Apply (one commit per step)
 
 Use the user's approved choices. For every existing file, merge (INS-003). Replace
-`{{PLACEHOLDERS}}` in templates with real values.
+`{{PLACEHOLDERS}}` in templates with real values. **Ask: Round 5** happens inside this phase:
+ask `Q-ACT-1`, `Q-ACT-2` and `Q-ACT-3` right before the step that needs them, in every mode.
 
 ### 4.1 Instructions: `chore: add dev-standard agent instructions`
 
@@ -126,8 +149,8 @@ Use the user's approved choices. For every existing file, merge (INS-003). Repla
 
 ### 4.2 Workflow: `chore: add spec-driven workflow`
 
-1. Install GitHub Spec Kit if `.specify/` doesn't exist. Check `specify init --help` for the
-   current flags:
+1. Install GitHub Spec Kit if `.specify/` doesn't exist and the user said yes to `Q-ACT-1`.
+   Check `specify init --help` for the current flags:
 
    ```bash
    uvx --from git+https://github.com/github/spec-kit.git specify init --here --ai claude
@@ -157,8 +180,8 @@ fast check once more.
 ### 4.4 Local checks: `chore: add local checks in warn mode`
 
 Merge the config fragments from `profiles/<profile>/` as described in
-[profiles/README.md](profiles/README.md). Install the git hook manager the report chose. Don't
-reformat the repo in this commit (INS-006).
+[profiles/README.md](profiles/README.md). Install the git hook manager the report chose, if the
+user said yes to `Q-ACT-2`. Don't reformat the repo in this commit (INS-006).
 
 ### 4.5 CI: `ci: add dev-standard checks`
 
@@ -173,13 +196,14 @@ moves the group to `block`.
 
 1. Copy `templates/.github/rulesets/` to `.github/rulesets/` and `templates/.github/CODEOWNERS`
    to `.github/CODEOWNERS` (merge if one exists). Replace `@OWNER`.
-2. Use `main.json` if the agent has its own GitHub identity, otherwise `main-solo.json` plus a
-   `BRA-009` waiver (BRA-009). Set `required_status_checks` to the CI jobs at `block`.
+2. Use `main.json` or `main-solo.json` plus a `BRA-009` waiver, per the answer to `Q-REPO-4`.
+   Set `required_status_checks` to the CI jobs at `block`.
 3. If the repo already has protection, compare it with the ruleset and list the differences in
    the report. Never loosen existing protection.
-4. Applying a ruleset changes the repository on GitHub and needs admin rights. Show the user
-   the `gh api ... --method POST --input` commands from `.github/rulesets/README.md` and let
-   them run or approve each one (BRA-011). On GitLab, give the settings from the table in
+4. Applying a ruleset changes the repository on GitHub and needs admin rights. Do what the
+   user chose in `Q-ACT-3`: show the `gh api ... --method POST --input` commands from
+   `.github/rulesets/README.md`, or run them one at a time with the user's approval for each
+   (BRA-011). On GitLab, give the settings from the table in
    `.dev-standard/standards/branching.md` instead.
 
 ## Phase 5 · Verify
@@ -190,12 +214,15 @@ moves the group to `block`.
 2. Test one hook: on a scratch branch named `999-hook-test`, try to edit a file under
    `paths.source`. The edit must be blocked with `SDD-001`. Delete the branch afterward.
 3. Confirm `git status` shows only the files listed in the report.
-4. Set the report's status to `Applied` and list every file created or changed.
+4. Set the report's status and `Phase` to `Applied` and list every file created or changed.
 
 ## Phase 6 · Hand off
 
-Open a draft PR from `chore/adopt-dev-standard` using the repo's PR template. Its description
-links the adoption report and lists:
+**Ask: Round 6** (`Q-END-1`, `Q-END-2`): how to hand over the branch, and which decisions to
+record as proposed ADRs.
+
+If the user chose a PR, open it as a draft from `chore/adopt-dev-standard` using the repo's PR
+template. Its description links the adoption report and lists:
 
 - what is now enforced and at which level,
 - the waivers and their expiry dates,
@@ -208,7 +235,7 @@ links the adoption report and lists:
 1. `git -C .dev-standard fetch --tags && git -C .dev-standard checkout vX.Y.Z`
 2. Read `.dev-standard/CHANGELOG.md` from the current version to the new one.
 3. Reassess only the changed rules (Phase 2), add a dated "Upgrade to vX.Y.Z" section to the
-   adoption report, and stop for approval (Phase 3).
+   adoption report, ask Round 3 for any new conflicts, and ask `Q-APPROVE-1` (Phase 3).
 4. Update the marked blocks, `version` in `.dev-standard.json`, and any changed templates.
    Re-run Phase 5.
 

@@ -9,29 +9,35 @@ RFCs, NIST, Google SRE, Twelve-Factor) rather than invented.
 
 ## Install into a repo
 
-Add this repo as a pinned submodule, then hand the rest to your agent:
+The install is an interview run by your coding agent. Start it in either way:
 
-```bash
-git submodule add <DEV_STANDARD_GIT_URL> .dev-standard
-git -C .dev-standard checkout v0.1.0
-```
+- **Claude Code with the plugin** (the repo is its own marketplace):
 
-> Install dev-standard: follow `.dev-standard/INSTALL.md`.
+  ```text
+  /plugin marketplace add HDElectronics/dev-standard
+  /plugin install dev-standard@dev-standard
+  /dev-standard:install
+  ```
 
-Working solo with Claude Code, you can also load the hooks, `/brainstorm`, `/pr` and the
-reviewer agent as a plugin (the repo is its own marketplace):
+- **Any agent:** tell it
 
-```text
-/plugin marketplace add <owner>/dev-standard
-/plugin install dev-standard@dev-standard
-```
+  > Install dev-standard from https://github.com/HDElectronics/dev-standard by following its INSTALL.md.
+
+The agent adds dev-standard as a pinned submodule (`.dev-standard/`), studies your repo, and
+then asks you about what it couldn't work out on its own: whether the project is deployed, who
+works on it, which profiles fit, how strict to start, and what to do about each place where your
+repo differs from the standard. Every question comes with its recommendation and the evidence
+for it. Choose **Quick** mode and it only asks about conflicts, the final plan and actions
+outside the repo.
+
+Nothing changes until you approve the plan. The agent then merges the standard in without
+overwriting your files. Existing code keeps its conventions; the standard applies to new and
+changed code. Every answer is logged in `docs/dev-standard/adoption-report.md`, so an
+interrupted install picks up where it stopped. See [INSTALL.md](INSTALL.md),
+[install/interview.md](install/interview.md) and
+[standards/installation.md](standards/installation.md).
 
 The plugin does nothing in repos without `.dev-standard.json`.
-
-The agent studies your repo first, writes an adoption report with the profiles, conflicts and
-waivers it proposes, and stops for your approval. After you approve, it merges the standard
-in without overwriting your files. Existing code keeps its conventions; the standard applies to
-new and changed code. See [INSTALL.md](INSTALL.md) and [standards/installation.md](standards/installation.md).
 
 ## How work flows after install
 
@@ -57,6 +63,7 @@ no finishing while checks fail.
 | Path | Contents |
 |------|----------|
 | [INSTALL.md](INSTALL.md) | Runbook an agent follows to adopt the standard |
+| [install/interview.md](install/interview.md) | The questions the agent asks during install, and what each answer changes |
 | [standards/](standards/README.md) | The rules, one file per group |
 | [standards/production/](standards/production/README.md) | Production pack for deployed backends |
 | [templates/](templates/) | Files copied or merged into adopting repos |
