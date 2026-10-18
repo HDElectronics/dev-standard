@@ -1,0 +1,462 @@
+#!/usr/bin/env python3
+"""dev-standard command line: repository checks for CI and local use.
+
+Usage:
+    dev-standard check [CHECK ...] [--base REF] [--root DIR] [--branch NAME]
+                       [--title TEXT] [--body-file FILE]
+
+CHECK is one or more of: manifest, branch, spec, brainstorm, trace, adr, pr, docs, deps.
+With no CHECK, all checks run. Diff-based checks (spec, brainstorm, docs, deps) need --base.
+PR checks read the title and body from --title/--body-file or the PR_TITLE/PR_BODY variables.
+
+Each finding names its rule ID. A MUST rule reports at its group's enforcement level from
+.dev-standard.json (block = error, warn = warning, off = skipped); a SHOULD rule reports at
+most a warning. Unexpired waivers that cover the rule and path suppress the finding.
+Exit status is 1 when any error is reported.
+
+Python 3.11+ and the standard library only, so it runs in any CI image.
+"""
+
+from __future__ import annotations
+
+import argparse
+import dataclasses
+import datetime as dt
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python < 3.11
+    tomllib = None  # type: ignore[assignment]
+
+ALL_CHECKS = ("manifest", "branch", "spec", "brainstorm", "trace", "adr", "pr", "docs", "deps")
+SHOULD_RULES = {"SEC-004", "DOC-007", "BRA-005"}
+LEVELS = ("block", "warn", "off")
+SKIP_DIRS = {".git", "node_modules", ".venv", "venv", ".dev-standard", "dist", "build", "__pycache__"}
+TEST_DIR_NAMES = {"tests", "test", "e2e", "__tests__"}
+TEST_FILE = re.compile(r"(^test_.*\.py$|_test\.py$|\.(test|spec)\.[cm]?[jt]sx?$)")
+BRANCH_OK = re.compile(
+    r"^(main|master"
+    r"|\d{3}-[a-z0-9]+(-[a-z0-9]+)*"  # spec branch (Spec Kit) and task branch NNN-tTTT-slug
+    r"|(fix|chore|docs)/[a-z0-9]+(-[a-z0-9]+)*"
+    r"|release/v\d+\.\d+"
+    r"|(dependabot|renovate|release-please--|gh-readonly-queue)/?.*)$"
+)
+CONVENTIONAL_TITLE = re.compile(
+    r"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9-]+\))?!?: \S.*$"
+)
+SPEC_STATUS = re.compile(r"^\*\*Status\*\*:\s*(\w+)", re.IGNORECASE | re.MULTILINE)
+BRAINSTORM_STATUS = re.compile(r"^status:\s*(\w+)", re.IGNORECASE | re.MULTILINE)
+ADR_FILE = re.compile(r"^(\d{4})-[a-z0-9]+(-[a-z0-9]+)*\.md$")
+ADR_STATUS = re.compile(r"^(proposed|rejected|accepted|deprecated|superseded by ADR-(\d{4}))$")
+UI_DISALLOWED = re.compile(r"^(@mui/.*|antd|bootstrap|react-bootstrap|styled-components|@emotion/.*|@chakra-ui/.*|chakra-ui)$")
+LOW_LEVEL_CRYPTO = re.compile(r"^\+\s*(from|import)\s+cryptography\.hazmat")
+
+
+@dataclasses.dataclass
+class Finding:
+    rule: str
+    message: str
+    path: str = ""
+
+    @property
+    def group(self) -> str:
+        return self.rule.split("-", 1)[0]
+
+
+class Repo:
+    """The repository under check, its manifest and its diff against a base ref."""
+
+    def __init__(self, root: Path, base: str | None) -> None:
+        self.root = root
+        self.base = base
+        manifest_path = root / ".dev-standard.json"
+        self.manifest: dict = {}
+        self.manifest_error = ""
+        if manifest_path.is_file():
+            try:
+                self.manifest = json.loads(manifest_path.read_text())
+            except json.JSONDecodeError as error:
+                self.manifest_error = str(error)
+        self._changed: list[str] | None = None
+
+    def git(self, *args: str) -> str:
+        result = subprocess.run(
+            ["git", "-C", str(self.root), *args], capture_output=True, text=True, check=False
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"git {' '.join(args)} failed: {result.stderr.strip()}")
+        return result.stdout
+
+    def changed_files(self) -> list[str]:
+        if self._changed is None:
+            out = self.git("diff", "--name-only", "--diff-filter=ACMR", f"{self.base}...HEAD")
+            self._changed = [line for line in out.splitlines() if line]
+        return self._changed
+
+    def added_files(self) -> list[str]:
+        out = self.git("diff", "--name-only", "--diff-filter=A", f"{self.base}...HEAD")
+        return [line for line in out.splitlines() if line]
+
+    def file_at_base(self, path: str) -> str | None:
+        try:
+            return self.git("show", f"{self.base}:{path}")
+        except RuntimeError:
+            return None
+
+    def source_paths(self) -> list[str]:
+        return self.manifest.get("paths", {}).get("source", ["src/", "app/"])
+
+    def is_source(self, path: str) -> bool:
+        return any(path.startswith(prefix) for prefix in self.source_paths())
+
+    def level(self, group: str) -> str:
+        enforcement = self.manifest.get("enforcement", {})
+        return enforcement.get("groups", {}).get(group, enforcement.get("default", "block"))
+
+    def waived(self, finding: Finding) -> bool:
+        today = dt.date.today().isoformat()
+        for waiver in self.manifest.get("waivers", []):
+            if waiver.get("rule") not in (finding.rule, f"{finding.group}-*"):
+                continue
+            if waiver.get("expires", "9999-12-31") < today:
+                continue
+            if finding.path.startswith(waiver.get("scope", "")):
+                return True
+        return False
+
+    def profiles(self) -> list[str]:
+        return self.manifest.get("profiles", ["base"])
+
+
+def spec_dir_for(repo: Repo, number: str) -> Path | None:
+    matches = sorted((repo.root / "specs").glob(f"{number}-*"))
+    return matches[0] if matches else None
+
+
+def spec_status(spec_file: Path) -> str:
+    match = SPEC_STATUS.search(spec_file.read_text()) if spec_file.is_file() else None
+    return match.group(1).lower() if match else ""
+
+
+# ---------------------------------------------------------------- checks
+
+
+def check_manifest(repo: Repo, _: argparse.Namespace) -> list[Finding]:
+    if repo.manifest_error:
+        return [Finding("INS-005", f".dev-standard.json is not valid JSON: {repo.manifest_error}", ".dev-standard.json")]
+    if not repo.manifest:
+        return [Finding("INS-005", "No .dev-standard.json found. Install the standard with .dev-standard/INSTALL.md.")]
+    findings: list[Finding] = []
+    m = repo.manifest
+    if not re.fullmatch(r"\d+\.\d+\.\d+", str(m.get("version", ""))):
+        findings.append(Finding("INS-009", "`version` must be a release like 0.1.0.", ".dev-standard.json"))
+    if "base" not in m.get("profiles", []):
+        findings.append(Finding("INS-005", "`profiles` must include `base`.", ".dev-standard.json"))
+    enforcement = m.get("enforcement", {})
+    levels = [enforcement.get("default")] + list(enforcement.get("groups", {}).values())
+    for level in levels:
+        if level not in LEVELS:
+            findings.append(Finding("INS-007", f"Enforcement level {level!r} must be one of {', '.join(LEVELS)}.", ".dev-standard.json"))
+    today = dt.date.today().isoformat()
+    for waiver in m.get("waivers", []):
+        missing = [k for k in ("rule", "reason", "approved_by", "expires") if not waiver.get(k)]
+        if missing:
+            findings.append(Finding("INS-005", f"Waiver {waiver.get('rule', '?')} is missing {', '.join(missing)}.", ".dev-standard.json"))
+        elif waiver["expires"] < today:
+            findings.append(Finding("INS-005", f"Waiver for {waiver['rule']} (scope {waiver.get('scope', '/')!r}) expired on {waiver['expires']}. Renew it with the user or close the gap.", ".dev-standard.json"))
+    return findings
+
+
+def check_branch(repo: Repo, args: argparse.Namespace) -> list[Finding]:
+    branch = args.branch or os.environ.get("GITHUB_HEAD_REF") or repo.git("branch", "--show-current").strip()
+    if not branch or BRANCH_OK.match(branch):
+        return []
+    return [Finding("BRA-003", f"Branch `{branch}` doesn't follow BRA-003: NNN-slug, NNN-tTTT-slug, fix/slug, chore/slug, docs/slug or release/vX.Y.")]
+
+
+def check_spec(repo: Repo, args: argparse.Namespace) -> list[Finding]:
+    findings: list[Finding] = []
+    for path in repo.changed_files():
+        if re.fullmatch(r"specs/\d{3}-[^/]+/spec\.md", path):
+            status = spec_status(repo.root / path)
+            if status not in ("draft", "approved", "implemented", "superseded"):
+                findings.append(Finding("SDD-001", "spec.md needs a `**Status**:` line set to Draft, Approved, Implemented or Superseded.", path))
+    branch = args.branch or os.environ.get("GITHUB_HEAD_REF") or repo.git("branch", "--show-current").strip()
+    match = re.match(r"^(\d{3})-", branch)
+    if match:
+        source_changes = [p for p in repo.changed_files() if repo.is_source(p)]
+        if source_changes:
+            spec_dir = spec_dir_for(repo, match.group(1))
+            status = spec_status(spec_dir / "spec.md") if spec_dir else ""
+            if status not in ("approved", "implemented"):
+                for path in source_changes:
+                    findings.append(Finding("SDD-001", f"Source changed on branch {branch}, but spec {match.group(1)} is not approved.", path))
+    return findings
+
+
+def check_brainstorm(repo: Repo, _: argparse.Namespace) -> list[Finding]:
+    findings: list[Finding] = []
+    for path in repo.added_files():
+        if not re.fullmatch(r"specs/\d{3}-[^/]+/spec\.md", path):
+            continue
+        record = repo.root / Path(path).parent / "brainstorm.md"
+        match = BRAINSTORM_STATUS.search(record.read_text()) if record.is_file() else None
+        if not match or match.group(1).lower() not in ("decided", "skipped"):
+            findings.append(Finding("BRN-001", "New spec without a decided brainstorm.md next to it.", path))
+    return findings
+
+
+def iter_test_files(root: Path):
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and d != "specs"]
+        in_test_dir = any(part in TEST_DIR_NAMES for part in Path(dirpath).relative_to(root).parts)
+        for name in filenames:
+            if TEST_FILE.search(name) or (in_test_dir and re.search(r"\.([cm]?[jt]sx?|py)$", name)):
+                yield Path(dirpath) / name
+
+
+def check_trace(repo: Repo, _: argparse.Namespace) -> list[Finding]:
+    specs = [p for p in sorted((repo.root / "specs").glob("[0-9][0-9][0-9]-*/spec.md")) if spec_status(p) == "implemented"]
+    if not specs:
+        return []
+    corpus = "\n".join(f.read_text(errors="ignore") for f in iter_test_files(repo.root))
+    findings: list[Finding] = []
+    for spec in specs:
+        number = spec.parent.name[:3]
+        rel = str(spec.relative_to(repo.root))
+        for fr in sorted(set(re.findall(r"\bFR-(\d{3})\b", spec.read_text()))):
+            if f"{number}/FR-{fr}" not in corpus:
+                findings.append(Finding("SDD-003", f"{number}/FR-{fr} has no test that references it.", rel))
+    return findings
+
+
+def check_adr(repo: Repo, _: argparse.Namespace) -> list[Finding]:
+    adr_dir = repo.root / "docs" / "adr"
+    if not adr_dir.is_dir():
+        return []
+    findings: list[Finding] = []
+    records: dict[str, tuple[str, str]] = {}
+    for file in sorted(adr_dir.glob("*.md")):
+        rel = str(file.relative_to(repo.root))
+        if file.name == "README.md" or file.name.startswith("0000-"):
+            continue
+        name_match = ADR_FILE.match(file.name)
+        if not name_match:
+            findings.append(Finding("ADR-002", "ADR file names are NNNN-lowercase-slug.md.", rel))
+            continue
+        number = name_match.group(1)
+        if number in records:
+            findings.append(Finding("ADR-002", f"ADR number {number} is used twice.", rel))
+        status_match = re.search(r'^status:\s*"?([^"#\n]+?)"?\s*(#.*)?$', file.read_text(), re.MULTILINE)
+        status = status_match.group(1).strip() if status_match else ""
+        status_ok = ADR_STATUS.match(status)
+        if not status_ok:
+            findings.append(Finding("ADR-004", f"Status {status!r} must be proposed, rejected, accepted, deprecated or 'superseded by ADR-NNNN'.", rel))
+        elif status_ok.group(2) and not list(adr_dir.glob(f"{status_ok.group(2)}-*.md")):
+            findings.append(Finding("ADR-004", f"Superseding ADR-{status_ok.group(2)} doesn't exist.", rel))
+        records[number] = (file.name, status)
+    index = adr_dir / "README.md"
+    if not index.is_file():
+        if records:
+            findings.append(Finding("ADR-007", "docs/adr/README.md (the decision log index) is missing."))
+        return findings
+    listed: dict[str, str] = {}
+    for line in index.read_text().splitlines():
+        link = re.search(r"\((\d{4})-[^)]*\.md\)", line)
+        if link and line.lstrip().startswith("|"):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            listed[link.group(1)] = cells[2] if len(cells) > 2 else ""
+    index_rel = str(index.relative_to(repo.root))
+    for number, (name, status) in records.items():
+        if number not in listed:
+            findings.append(Finding("ADR-007", f"{name} is not listed in the index.", index_rel))
+        elif listed[number].lower() != status.lower():
+            findings.append(Finding("ADR-007", f"Index says {listed[number]!r} for ADR-{number}, the file says {status!r}.", index_rel))
+    for number in listed:
+        if number not in records:
+            findings.append(Finding("ADR-007", f"Index lists ADR-{number}, but no such file exists.", index_rel))
+    return findings
+
+
+def pr_text(args: argparse.Namespace) -> tuple[str | None, str | None]:
+    title = args.title if args.title is not None else os.environ.get("PR_TITLE")
+    if args.body_file:
+        body = Path(args.body_file).read_text()
+    else:
+        body = os.environ.get("PR_BODY")
+    return title, body
+
+
+def template_headings(repo: Repo) -> list[str]:
+    candidates = [
+        repo.root / ".github" / "pull_request_template.md",
+        repo.root / repo.manifest.get("source", ".dev-standard") / "templates" / ".github" / "pull_request_template.md",
+        Path(__file__).resolve().parent.parent / "templates" / ".github" / "pull_request_template.md",
+    ]
+    for candidate in candidates:
+        if candidate.is_file():
+            return re.findall(r"^## (.+?)\s*$", candidate.read_text(), re.MULTILINE)
+    return []
+
+
+def check_pr(repo: Repo, args: argparse.Namespace) -> list[Finding]:
+    title, body = pr_text(args)
+    findings: list[Finding] = []
+    if title is not None:
+        if not CONVENTIONAL_TITLE.match(title):
+            findings.append(Finding("PR-001", f"PR title {title!r} is not a Conventional Commit line, e.g. 'feat(cart): match pasted BOM lines'."))
+        elif len(title) > 72:
+            findings.append(Finding("PR-001", f"PR title is {len(title)} characters; the limit is 72."))
+    if body is not None:
+        text = re.sub(r"<!--.*?-->", "", body, flags=re.DOTALL)
+        sections = {m.group(1).strip(): m.end() for m in re.finditer(r"^## (.+?)\s*$", text, re.MULTILINE)}
+        for heading in template_headings(repo):
+            if heading not in sections:
+                findings.append(Finding("PR-003", f"PR description is missing the section '## {heading}'."))
+                continue
+            start = sections[heading]
+            following = [pos for pos in sections.values() if pos > start]
+            next_heading = text.rfind("\n## ", start, min(following)) if following else -1
+            content = text[start: next_heading if next_heading != -1 else len(text)]
+            if not re.sub(r"[\s\-*]|\[[ x]\]", "", content):
+                findings.append(Finding("PR-003", f"PR section '## {heading}' is empty. Write 'None' if there is nothing to say."))
+    return findings
+
+
+def check_docs(repo: Repo, args: argparse.Namespace) -> list[Finding]:
+    title, body = pr_text(args)
+    if not title:
+        return []
+    breaking = bool(re.match(r"^\w+(\([^)]*\))?!:", title)) or "BREAKING CHANGE" in (body or "")
+    if not (title.startswith("feat") or breaking):
+        return []
+    changed = repo.changed_files()
+    if not any(repo.is_source(p) for p in changed):
+        return []
+    if any(p.startswith(("docs/", "specs/")) or p.lower().startswith("readme") or p.endswith(".md") for p in changed):
+        return []
+    return [Finding("DOC-007", "A feature or breaking change with no docs, README or spec update in the same PR.")]
+
+
+def dependency_names(path: str, text: str | None) -> set[str]:
+    if not text:
+        return set()
+    if path.endswith("package.json"):
+        data = json.loads(text)
+        return {name for key in ("dependencies", "devDependencies", "peerDependencies") for name in data.get(key, {})}
+    if path.endswith("pyproject.toml") and tomllib is not None:
+        data = tomllib.loads(text)
+        project = data.get("project", {})
+        specs = list(project.get("dependencies", []))
+        for group in project.get("optional-dependencies", {}).values():
+            specs += group
+        for group in data.get("dependency-groups", {}).values():
+            specs += [item for item in group if isinstance(item, str)]
+        return {re.split(r"[\s<>=!~;\[(]", spec, maxsplit=1)[0].lower() for spec in specs if spec}
+    return set()
+
+
+def check_deps(repo: Repo, args: argparse.Namespace) -> list[Finding]:
+    _, body = pr_text(args)
+    body = body or ""
+    findings: list[Finding] = []
+    for path in repo.changed_files():
+        if not path.endswith(("package.json", "pyproject.toml")):
+            continue
+        head_text = (repo.root / path).read_text()
+        added = dependency_names(path, head_text) - dependency_names(path, repo.file_at_base(path))
+        for name in sorted(added):
+            if "react-web" in repo.profiles() and path.endswith("package.json") and UI_DISALLOWED.match(name):
+                if not re.search(r"ADR-\d{4}", body):
+                    findings.append(Finding("UI-002", f"New UI library `{name}` needs an ADR, referenced in the PR.", path))
+            if name not in body:
+                findings.append(Finding("SEC-004", f"New dependency `{name}`: justify it in the PR (purpose, size, license, maintenance).", path))
+    if repo.manifest.get("deployed"):
+        diff = repo.git("diff", "-U0", f"{repo.base}...HEAD", "--", "*.py")
+        current = ""
+        for line in diff.splitlines():
+            if line.startswith("+++ b/"):
+                current = line[6:]
+            elif LOW_LEVEL_CRYPTO.match(line):
+                findings.append(Finding("AUTH-001", "Direct use of cryptography.hazmat. Use the auth provider or a maintained library.", current))
+    return findings
+
+
+CHECKS = {
+    "manifest": check_manifest, "branch": check_branch, "spec": check_spec,
+    "brainstorm": check_brainstorm, "trace": check_trace, "adr": check_adr,
+    "pr": check_pr, "docs": check_docs, "deps": check_deps,
+}
+NEEDS_BASE = {"spec", "brainstorm", "docs", "deps"}
+
+
+def severity(repo: Repo, finding: Finding) -> str:
+    level = repo.level(finding.group)
+    if level == "off":
+        return "off"
+    if finding.rule in SHOULD_RULES or level == "warn":
+        return "warning"
+    return "error"
+
+
+def report(findings: list[Finding], repo: Repo) -> int:
+    in_actions = os.environ.get("GITHUB_ACTIONS") == "true"
+    errors = 0
+    for finding in findings:
+        if repo.waived(finding):
+            continue
+        sev = severity(repo, finding)
+        if sev == "off":
+            continue
+        errors += sev == "error"
+        if in_actions:
+            location = f" file={finding.path}," if finding.path else " "
+            print(f"::{sev}{location}title={finding.rule}::{finding.message}")
+        else:
+            where = f"{finding.path}: " if finding.path else ""
+            print(f"{sev.upper():7} {finding.rule:9} {where}{finding.message}")
+    return errors
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="dev-standard", description=__doc__.split("\n\n")[0])
+    sub = parser.add_subparsers(dest="command", required=True)
+    check = sub.add_parser("check", help="run repository checks")
+    check.add_argument("checks", nargs="*", metavar="CHECK", help=f"any of: {', '.join(ALL_CHECKS)}")
+    check.add_argument("--root", default=".", help="repository root (default: current directory)")
+    check.add_argument("--base", help="base ref for diff-based checks, e.g. origin/main")
+    check.add_argument("--branch", help="branch name (default: GITHUB_HEAD_REF or the current branch)")
+    check.add_argument("--title", help="PR title (default: PR_TITLE)")
+    check.add_argument("--body-file", help="file with the PR description (default: PR_BODY)")
+    args = parser.parse_args(argv)
+
+    unknown = [name for name in args.checks if name not in CHECKS]
+    if unknown:
+        parser.error(f"unknown check: {', '.join(unknown)} (choose from {', '.join(ALL_CHECKS)})")
+    repo = Repo(Path(args.root).resolve(), args.base)
+    selected = args.checks or list(ALL_CHECKS)
+    findings: list[Finding] = []
+    for name in selected:
+        if name in NEEDS_BASE and not args.base:
+            if args.checks:
+                print(f"note    {name}: skipped, needs --base", file=sys.stderr)
+            continue
+        try:
+            findings += CHECKS[name](repo, args)
+        except RuntimeError as error:
+            print(f"error   {name}: {error}", file=sys.stderr)
+            return 2
+    errors = report(findings, repo)
+    if not findings:
+        print(f"dev-standard: {', '.join(selected)}: no findings")
+    return 1 if errors else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
