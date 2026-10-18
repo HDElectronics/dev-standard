@@ -1,0 +1,31 @@
+# CI for dev-standard itself. Pin action versions to commit SHAs before publishing (SEC-002).
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Hook and CLI tests
+        run: python3 -m unittest discover -s tests -v
+      - name: shellcheck hooks
+        run: shellcheck -x -S warning enforce/hooks/*.sh
+      - name: JSON files parse
+        run: |
+          for f in .claude-plugin/*.json plugin/hooks.json schema/*.json templates/.claude/settings.json \
+                   templates/dev-standard.json templates/.github/rulesets/*.json profiles/react-web/*.json; do
+            jq empty "$f" || { echo "invalid JSON: $f"; exit 1; }
+          done
+      - name: Decision log (ADR-002, ADR-004, ADR-007)
+        run: python3 cli/dev-standard check adr
