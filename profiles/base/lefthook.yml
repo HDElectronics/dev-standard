@@ -1,0 +1,29 @@
+# dev-standard base profile. https://lefthook.dev
+# Install once per clone: `npx lefthook install` (or `lefthook install` if installed globally).
+# Keep the format-* commands for the profiles this repo uses; delete the others.
+
+pre-commit:
+  parallel: true
+  commands:
+    # SEC-001: block staged secrets. gitleaks 8.19+ uses `gitleaks git --pre-commit --staged`;
+    # older versions use `gitleaks protect --staged`.
+    gitleaks:
+      run: gitleaks git --pre-commit --redact --staged --verbose
+
+    # STY-001, profile python-api
+    format-python:
+      glob: "*.py"
+      run: uv run ruff format {staged_files} && uv run ruff check --fix {staged_files}
+      stage_fixed: true
+
+    # STY-001, profile react-web
+    format-web:
+      glob: "*.{js,jsx,ts,tsx,json,jsonc}"
+      run: npx @biomejs/biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+      stage_fixed: true
+
+commit-msg:
+  commands:
+    # GIT-001
+    commitlint:
+      run: npx --no -- commitlint --edit {1}

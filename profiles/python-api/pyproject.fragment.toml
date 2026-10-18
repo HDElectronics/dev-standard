@@ -1,0 +1,62 @@
+# dev-standard profile python-api. Merge these tables into the repo's pyproject.toml (see profiles/README.md).
+# Dev dependencies: uv add --dev ruff pyright pytest pytest-cov diff-cover httpx
+
+# STY-001, NAM-001, STY-003, SEC-006 (bandit rules via S)
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+  "E", "W",   # pycodestyle
+  "F",        # pyflakes
+  "I",        # isort
+  "N",        # pep8-naming (NAM-001)
+  "UP",       # pyupgrade
+  "B",        # flake8-bugbear
+  "S",        # flake8-bandit (SEC-006)
+  "D",        # pydocstyle (STY-003, DOC-004)
+  "SIM",      # flake8-simplify
+  "PT",       # flake8-pytest-style
+  "ASYNC",    # flake8-async
+  "BLE",      # blind except (ERR-001)
+  "RUF",      # ruff-specific
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "D"]
+"migrations/**" = ["D"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+# STY-002
+[tool.pyright]
+typeCheckingMode = "strict"
+pythonVersion = "3.12"
+include = ["app", "tests"]
+
+# TST-002: every test carries a size marker.
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+markers = [
+  "small: one process, no network, disk or sleep",
+  "medium: one machine; localhost services such as a test database",
+  "large: real external dependencies",
+]
+
+# TST-003: diff coverage is computed from this report.
+[tool.coverage.run]
+branch = true
+source = ["app"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.coverage.xml]
+output = "coverage.xml"

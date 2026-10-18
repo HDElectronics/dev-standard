@@ -1,0 +1,114 @@
+# dev-standard base CI. Added as a new workflow at install; existing workflows are not edited.
+# Rollout (INS-007): jobs start with `continue-on-error: true` (warn). Remove it per job to make it blocking,
+# then mark the job as a required status check in branch protection.
+# Keep the job for each profile in .dev-standard.json; delete the others.
+name: standard-ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  # SEC-001. Uses the gitleaks binary through Docker, which needs no license.
+  # (gitleaks/gitleaks-action@v2 is an alternative; it needs a free license key for organization repos.)
+  secrets:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Pin the image to a release tag (SEC-002) when installing; `latest` is a placeholder.
+      - name: gitleaks
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest git /repo --redact --verbose
+
+  # GIT-001, PR-001. The title goes through an env var, never inline, to avoid script injection.
+  commits:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save @commitlint/cli @commitlint/config-conventional
+      - name: PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: echo "$PR_TITLE" | npx commitlint
+      - name: Commits in the PR
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: npx commitlint --from "$BASE_SHA" --to "$HEAD_SHA"
+
+  # dev-standard rule checks (INS, BRA, SDD, BRN, ADR, PR, DOC, SEC, UI, AUTH) with cli/dev-standard.
+  # Each finding reports at its group's level from .dev-standard.json, so warn-level findings
+  # never fail this job and it needs no continue-on-error. A private dev-standard submodule
+  # needs a token with read access in the checkout step.
+  standard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Repository checks
+        if: github.event_name != 'pull_request'
+        run: python3 .dev-standard/cli/dev-standard check manifest adr trace
+      - name: Pull request checks
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_REF: ${{ github.base_ref }}
+        run: python3 .dev-standard/cli/dev-standard check --base "origin/$BASE_REF"
+
+  # Profile python-api: STY-001, STY-002, TST-003.
+  python:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --locked
+      - run: uv run ruff format --check .
+      - run: uv run ruff check .
+      - run: uv run pyright
+      - run: uv run pytest --cov --cov-report=xml
+      - name: Diff coverage (TST-003)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: uvx diff-cover coverage.xml --compare-branch="origin/$BASE_REF" --fail-under=80
+
+  # Profile react-web: STY-001, STY-002, UI-004, UI-009.
+  web:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx biome ci .
+      - run: npx eslint .
+      - run: npx tsc --noEmit -p tsconfig.app.json
+      - run: npx vitest run --coverage
+
+  # Planned for dev-standard v0.5: PR description check (PR-003), ZAP baseline (WEB-002),
+  # Trivy (OPS-002), SBOM and signing (OPS-003), Lighthouse CI (UI-008), axe in Playwright (UI-007).
