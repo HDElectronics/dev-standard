@@ -49,6 +49,7 @@
   --warn: #f2b864; --warn-soft: #35280f; --bad: #ff8a8f; --code-bg: #1b212b; color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
 .wrap {
   max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;
@@ -155,6 +156,7 @@ td select { width: auto; padding: 4px 6px; }
 .decide > * { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
 .options { display: flex; flex-direction: column; gap: 6px; }
 .option { display: grid; grid-template-columns: auto 2rem minmax(0, 1fr) auto; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: 5px; padding: 8px 10px; cursor: pointer; background: var(--bg); }
+.option { font-family: var(--font-body); font-size: 0.9375rem; text-transform: none; letter-spacing: normal; color: var(--ink); }
 .option:has(input:checked) { border-color: var(--good); background: var(--good-soft); }
 .option input { accent-color: var(--good); }
 .rejects { display: flex; flex-direction: column; gap: 8px; }
@@ -214,7 +216,7 @@ pre { margin: 0; background: var(--code-bg); border: 1px solid var(--line); bord
       <span class="example-flag" id="h-example" hidden>Example data</span>
     </div>
     <h1 id="h-title">Brainstorm</h1>
-    <p class="muted">Frame the problem, generate options, score them, then record one decision. The exported <span class="mono">brainstorm.md</span> is the input for <span class="mono">/spec</span>.</p>
+    <p class="muted">Frame the problem, generate options, score them, then record one decision. The exported <span class="mono">brainstorm.md</span> is the input for <span class="mono">/speckit.specify</span>.</p>
   </header>
 
   <div class="stages" role="tablist" aria-label="Stages">
