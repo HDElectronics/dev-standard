@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:dev-standard:manifest:0.1",
+  "title": "dev-standard manifest (.dev-standard.json)",
+  "description": "Records how a repository adopted dev-standard: version, profiles, enforcement levels and waivers.",
+  "type": "object",
+  "required": ["version", "source", "profiles", "enforcement"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "description": "dev-standard version this repo follows." },
+    "source": { "type": "string", "description": "Path to the dev-standard checkout, usually .dev-standard." },
+    "installed": { "type": "string", "format": "date" },
+    "updated": { "type": "string", "format": "date" },
+    "profiles": {
+      "type": "array",
+      "items": { "enum": ["base", "react-web", "python-api", "c-embedded"] },
+      "contains": { "const": "base" },
+      "uniqueItems": true
+    },
+    "deployed": { "type": "boolean", "description": "true turns on the production pack (AUTH, ABU, API, WEB, REL, OBS, OPS, DAT)." },
+    "packs": { "type": "array", "items": { "enum": ["embedded-c", "llm", "mobile"] }, "uniqueItems": true },
+    "paths": {
+      "type": "object",
+      "properties": {
+        "source": { "type": "array", "items": { "type": "string" }, "description": "Path prefixes that count as source code for SDD-001." }
+      },
+      "additionalProperties": false
+    },
+    "checks": {
+      "type": "object",
+      "properties": {
+        "fast": { "type": "string", "description": "Command the Stop hook runs (AGT-003). Must pass on a clean checkout." },
+        "full": { "type": "string", "description": "Command CI runs." }
+      },
+      "additionalProperties": false
+    },
+    "enforcement": {
+      "type": "object",
+      "required": ["default"],
+      "properties": {
+        "default": { "$ref": "#/$defs/level" },
+        "groups": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[A-Z]{2,5}$" },
+          "additionalProperties": { "$ref": "#/$defs/level" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "waivers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rule", "reason", "approved_by", "expires"],
+        "properties": {
+          "rule": { "type": "string", "pattern": "^[A-Z]{2,5}-(\\d{3}|\\*)$" },
+          "scope": { "type": "string", "description": "Path prefix the waiver covers. Empty means the whole repo." },
+          "reason": { "type": "string", "minLength": 10 },
+          "approved_by": { "type": "string" },
+          "expires": { "type": "string", "format": "date" },
+          "plan": { "type": "string", "description": "How and when the gap will close, or why it never will." }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "level": { "enum": ["block", "warn", "off"] }
+  }
+}

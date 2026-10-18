@@ -1,0 +1,17 @@
+@AGENTS.md
+
+<!-- dev-standard:start v{{VERSION}} -->
+## Claude Code notes
+
+- **Hooks are active.** `.claude/settings.json` runs dev-standard hooks. When a hook blocks you, its message starts with a rule ID. Fix the cause; never work around the hook.
+  - `require-brainstorm.sh` blocks writing `spec.md` until `brainstorm.md` is decided.
+  - `require-spec.sh` blocks source edits on a feature branch until the spec is approved.
+  - `no-bypass.sh` blocks `--no-verify`, force pushes to `main` and unexplained lint suppressions.
+  - `format-file.sh` formats each file after you edit it.
+  - `definition-of-done.sh` runs the fast checks when you try to stop.
+- **Slash commands:**
+  - `/brainstorm NNN slug "problem"` creates the brainstorm board for a new feature.
+  - `/pr` runs the checks, self-reviews and opens a draft PR.
+  - Spec Kit commands: `/speckit.specify`, `/speckit.clarify`, `/speckit.plan`, `/speckit.tasks`, `/speckit.analyze`, `/speckit.implement`.
+- **Subagent:** ask `standard-reviewer` to review the diff before marking a PR ready.
+<!-- dev-standard:end -->

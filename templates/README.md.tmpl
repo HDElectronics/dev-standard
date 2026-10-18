@@ -1,0 +1,54 @@
+# {{PROJECT_NAME}}
+
+<!--
+  dev-standard README template (DOC-002). Required sections: what and why, quickstart,
+  configuration, development, links. Keep the quickstart to 5 commands or fewer.
+  When merging into an existing README, keep its content and add missing sections only.
+-->
+
+{{One sentence: what this is and who it is for.}}
+
+{{One short paragraph: the problem it solves and why it exists.}}
+
+## Quickstart
+
+```bash
+git clone {{REPO_URL}}
+cd {{REPO_DIR}}
+{{INSTALL_COMMAND}}
+{{RUN_COMMAND}}
+```
+
+Then open {{URL_OR_NEXT_STEP}}.
+
+## Configuration
+
+Configuration comes from environment variables (REL-001). Copy `.env.example` to `.env` for local development.
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `{{APP}}_DATABASE_URL` | yes | | {{Connection string}} |
+| `{{APP}}_LOG_LEVEL` | no | `info` | {{Log level}} |
+
+## Development
+
+```bash
+{{SETUP_COMMAND}}        # install tools and git hooks
+{{CHECK_COMMAND}}        # format, lint, typecheck, small tests
+{{TEST_COMMAND}}         # full test suite
+```
+
+This repo follows [dev-standard](.dev-standard/README.md). Agents read [AGENTS.md](AGENTS.md). New features start with a brainstorm and a spec; see the workflow in AGENTS.md.
+
+## Documentation
+
+- [Tutorials](docs/tutorials/)
+- [How-to guides](docs/how-to/)
+- [Reference](docs/reference/)
+- [Explanation](docs/explanation/)
+- [Architecture decisions](docs/adr/)
+- [Changelog](CHANGELOG.md)
+
+## License
+
+{{LICENSE}}

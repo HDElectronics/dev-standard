@@ -1,0 +1,26 @@
+{
+  "$schema": "./.dev-standard/schema/manifest.schema.json",
+  "version": "{{VERSION}}",
+  "source": ".dev-standard",
+  "installed": "{{DATE}}",
+  "profiles": ["base"],
+  "deployed": false,
+  "packs": [],
+  "paths": {
+    "source": ["src/", "app/"]
+  },
+  "checks": {
+    "fast": "{{FAST_CHECK_COMMAND}}",
+    "full": "{{FULL_CHECK_COMMAND}}"
+  },
+  "enforcement": {
+    "default": "warn",
+    "groups": {
+      "AGT": "block",
+      "BRN": "block",
+      "SDD": "block",
+      "GIT": "block"
+    }
+  },
+  "waivers": []
+}

@@ -1,0 +1,7 @@
+# BRA-010: changes to the files that define the rules need the owner's review.
+# Replace @OWNER with your GitHub user or a team such as @org/maintainers.
+/.dev-standard.json                @OWNER
+/.claude/                          @OWNER
+/.github/                          @OWNER
+/.specify/memory/constitution.md   @OWNER
+/docs/adr/                         @OWNER

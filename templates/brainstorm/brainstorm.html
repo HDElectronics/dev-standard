@@ -1,0 +1,689 @@
+<title>Brainstorm Board</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,600;112,800&family=Public+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<!--
+  dev-standard · BRN template · v0.2
+  AGENT: copy this file to brainstorms/<slug>/brainstorm.html and replace ONLY the JSON
+  inside <script id="seed">. Do not edit markup, styles or the script below it.
+  The user frames, diverges, converges and decides here, then exports brainstorm.md
+  next to this file. /speckit.specify reads brainstorm.md as its input; the folder then
+  moves into specs/NNN-slug/ (see standards/brainstorm.md).
+-->
+<style>
+/* Layout: four-stage board (Double Diamond, first diamond). One stage visible at a time,
+   stage tabs carry completion state. Same token family as the dev-standard blueprint. */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --ink: #141922;
+  --muted: #5a6475;
+  --line: #d9dee7;
+  --accent: #2742c9;
+  --accent-soft: #e6eafb;
+  --good: #1d6f63;
+  --good-soft: #dff3ef;
+  --warn: #9a5b00;
+  --warn-soft: #fbf0dc;
+  --bad: #b4232f;
+  --code-bg: #eef1f6;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --radius: 6px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1218; --surface: #161b23; --ink: #e5e9f0; --muted: #98a2b3; --line: #2a313d;
+    --accent: #8ea2ff; --accent-soft: #1d2442; --good: #6fd3c2; --good-soft: #12302b;
+    --warn: #f2b864; --warn-soft: #35280f; --bad: #ff8a8f; --code-bg: #1b212b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1218; --surface: #161b23; --ink: #e5e9f0; --muted: #98a2b3; --line: #2a313d;
+  --accent: #8ea2ff; --accent-soft: #1d2442; --good: #6fd3c2; --good-soft: #12302b;
+  --warn: #f2b864; --warn-soft: #35280f; --bad: #ff8a8f; --code-bg: #1b212b; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap {
+  max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+h1, h2, h3 { font-family: var(--font-display); font-stretch: 112%; margin: 0; line-height: 1.2; text-wrap: balance; }
+h1 { font-size: 1.875rem; font-weight: 800; }
+h2 { font-size: 1.25rem; font-weight: 800; }
+h3 { font-size: 1rem; font-weight: 600; }
+p { margin: 0; max-width: 44rem; }
+.mono { font-family: var(--font-mono); }
+.muted { color: var(--muted); }
+.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.example-flag { color: var(--warn); background: var(--warn-soft); padding: 1px 7px; border-radius: 3px; }
+header { display: flex; flex-direction: column; gap: 8px; }
+
+/* Stage tabs */
+.stages { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.stage {
+  font: inherit; text-align: left; cursor: pointer; background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+}
+.stage .n { font-family: var(--font-mono); font-size: 0.6875rem; color: var(--muted); display: flex; justify-content: space-between; gap: 6px; }
+.stage .name { font-family: var(--font-display); font-stretch: 112%; font-weight: 600; }
+.stage .hint { font-size: 0.8125rem; color: var(--muted); }
+.stage[aria-selected="true"] { border: 2px solid var(--accent); padding: 9px 11px; }
+.stage .state { text-transform: uppercase; letter-spacing: 0.06em; }
+.stage[data-done="true"] .state { color: var(--good); }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+.panel-head { display: flex; flex-direction: column; gap: 4px; }
+
+/* Forms */
+.fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+label, .label { font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.field small { color: var(--muted); font-size: 0.8125rem; }
+input[type="text"], input[type="number"], textarea, select {
+  font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 5px; padding: 8px 10px; width: 100%;
+}
+textarea { resize: vertical; min-height: 4.5em; }
+#f-hmw { font-family: var(--font-display); font-stretch: 112%; font-weight: 600; font-size: 1.0625rem; }
+
+.btn { font: inherit; font-size: 0.8125rem; font-weight: 600; border-radius: 5px; padding: 7px 12px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.btn.danger { color: var(--bad); }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* Ideas */
+.ideas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.idea { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 8px; background: var(--bg); min-width: 0; }
+.idea-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.num { font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); background: var(--accent-soft); padding: 1px 6px; border-radius: 3px; }
+.by { font-family: var(--font-mono); font-size: 0.6875rem; color: var(--muted); }
+.idea p { font-size: 0.875rem; color: var(--muted); overflow-wrap: anywhere; }
+.tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.tag { font-family: var(--font-mono); font-size: 0.6875rem; border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; color: var(--muted); }
+.idea .btn { align-self: flex-start; margin-top: auto; padding: 4px 8px; font-size: 0.75rem; }
+.add { border: 1px dashed var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+
+/* Converge */
+.converge { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.converge > * { min-width: 0; }
+.score-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+th { font-family: var(--font-mono); font-weight: 500; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); background: var(--code-bg); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td select { width: auto; padding: 4px 6px; }
+.stepper { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.stepper button { width: 26px; height: 26px; padding: 0; border-radius: 4px; }
+.dots { display: inline-flex; gap: 3px; }
+.dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; }
+.ice { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; }
+.budget { font-size: 0.875rem; }
+.budget b { font-family: var(--font-mono); }
+.budget.over b { color: var(--bad); }
+
+.matrix { width: 100%; height: auto; display: block; }
+.matrix .grid { stroke: var(--line); stroke-width: 1; fill: none; }
+.matrix .divider { stroke: var(--muted); stroke-dasharray: 4 4; stroke-width: 1; }
+.matrix .quad { fill: var(--muted); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
+.matrix .quad.win { fill: var(--good); }
+.matrix .axis { fill: var(--muted); font-family: var(--font-mono); font-size: 10px; }
+.matrix .pt circle { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.matrix .pt.chosen circle { fill: var(--good); }
+.matrix .pt text { fill: var(--surface); font-family: var(--font-mono); font-size: 11px; font-weight: 500; text-anchor: middle; dominant-baseline: central; }
+.quickwin-bg { fill: var(--good-soft); }
+
+.rank { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.rank li { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr) 2.6rem; gap: 8px; align-items: center; font-size: 0.875rem; }
+.bar { height: 6px; background: var(--code-bg); border-radius: 3px; overflow: hidden; margin-top: 3px; }
+.bar i { display: block; height: 100%; background: var(--accent); }
+
+/* Decide */
+.decide { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.decide > * { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.options { display: flex; flex-direction: column; gap: 6px; }
+.option { display: grid; grid-template-columns: auto 2rem minmax(0, 1fr) auto; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: 5px; padding: 8px 10px; cursor: pointer; background: var(--bg); }
+.option:has(input:checked) { border-color: var(--good); background: var(--good-soft); }
+.option input { accent-color: var(--good); }
+.rejects { display: flex; flex-direction: column; gap: 8px; }
+.reject { display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr); gap: 8px; align-items: center; font-size: 0.875rem; }
+pre { margin: 0; background: var(--code-bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; overflow: auto; max-height: 460px; font-family: var(--font-mono); font-size: 0.75rem; line-height: 1.5; white-space: pre; }
+.note { font-size: 0.8125rem; color: var(--muted); }
+.toast { font-size: 0.8125rem; color: var(--good); min-height: 1.2em; }
+
+@media (max-width: 860px) {
+  .stages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ideas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .converge, .decide { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .fields { grid-template-columns: minmax(0, 1fr); }
+  .ideas { grid-template-columns: minmax(0, 1fr); }
+  .stage .hint { display: none; }
+  .reject { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+
+<script type="application/json" id="seed">
+{
+  "id": "faster-restock",
+  "spec": "",
+  "title": "Faster restock for repeat buyers",
+  "example": true,
+  "date": "2026-10-18",
+  "voters": 3,
+  "frame": {
+    "problem": "Repeat buyers (university labs, repair shops, makers) reorder the same components every few weeks. Today they search for each part again, one by one. Support logs show 20-minute sessions for 15-line orders, and carts get abandoned when one part is out of stock.",
+    "hmw": "How might we let a repeat buyer restock a whole project's parts in under a minute?",
+    "users": "Lab technicians and repair shops ordering 10 to 40 lines, several times a month.",
+    "constraints": "WooCommerce stays the store backend\nNo native mobile app\nMust work on a phone over a slow 3G connection",
+    "appetite": "small",
+    "success": "Median time from login to checkout for a repeat order is under 60 s."
+  },
+  "ideas": [
+    { "id": "i1", "title": "Reorder a past order", "pitch": "One button on each past order puts every in-stock line in the cart and lists the rest with substitutes.", "tags": ["account", "cart"], "by": "agent", "votes": 2, "impact": 4, "effort": 2, "confidence": 4 },
+    { "id": "i2", "title": "Saved part lists", "pitch": "Customers save named lists such as \"Robot kit v2\" and add a whole list to the cart with its quantities.", "tags": ["account"], "by": "agent", "votes": 1, "impact": 4, "effort": 3, "confidence": 3 },
+    { "id": "i3", "title": "Paste a BOM", "pitch": "A text box accepts SKUs or manufacturer part numbers with quantities, one per line, or a KiCad BOM CSV, and matches them to products.", "tags": ["cart", "import"], "by": "agent", "votes": 2, "impact": 5, "effort": 3, "confidence": 3 },
+    { "id": "i4", "title": "Restock reminders", "pitch": "An email after the customer's usual reorder interval, with a link to a prefilled cart.", "tags": ["marketing"], "by": "agent", "votes": 0, "impact": 2, "effort": 2, "confidence": 2 },
+    { "id": "i5", "title": "Chat ordering bot", "pitch": "Customers send a parts list over a messaging app and receive a payment link back.", "tags": ["channel"], "by": "agent", "votes": 0, "impact": 3, "effort": 5, "confidence": 2 },
+    { "id": "i6", "title": "Quick-add by SKU", "pitch": "A header field takes a SKU and a quantity and adds the part without leaving the page.", "tags": ["cart"], "by": "agent", "votes": 1, "impact": 3, "effort": 1, "confidence": 4 },
+    { "id": "i7", "title": "Do nothing, tune search", "pitch": "Baseline: keep the flow and improve search ranking for part numbers.", "tags": ["baseline"], "by": "agent", "votes": 0, "impact": 2, "effort": 1, "confidence": 3 }
+  ],
+  "decision": { "chosen": null, "combine": [], "why": "", "rejected": {} },
+  "questions": "Do substitutes need customer approval before they enter the cart?\nWhich BOM formats besides KiCad CSV matter?",
+  "risks": "Part-number matching errors could put the wrong component in the cart."
+}
+</script>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">
+      <span id="h-id">BRN</span><span>·</span><span id="h-spec"></span><span>·</span><span id="h-date"></span>
+      <span class="example-flag" id="h-example" hidden>Example data</span>
+    </div>
+    <h1 id="h-title">Brainstorm</h1>
+    <p class="muted">Frame the problem, generate options, score them, then record one decision. The exported <span class="mono">brainstorm.md</span> is the input for <span class="mono">/spec</span>.</p>
+  </header>
+
+  <div class="stages" role="tablist" aria-label="Stages">
+    <button class="stage" role="tab" id="tab-frame" aria-controls="p-frame" data-stage="frame"><span class="n"><span>01</span><span class="state"></span></span><span class="name">Frame</span><span class="hint">Problem and question</span></button>
+    <button class="stage" role="tab" id="tab-diverge" aria-controls="p-diverge" data-stage="diverge"><span class="n"><span>02</span><span class="state"></span></span><span class="name">Diverge</span><span class="hint">Many options, no judging</span></button>
+    <button class="stage" role="tab" id="tab-converge" aria-controls="p-converge" data-stage="converge"><span class="n"><span>03</span><span class="state"></span></span><span class="name">Converge</span><span class="hint">Vote and score</span></button>
+    <button class="stage" role="tab" id="tab-decide" aria-controls="p-decide" data-stage="decide"><span class="n"><span>04</span><span class="state"></span></span><span class="name">Decide</span><span class="hint">Pick, record, export</span></button>
+  </div>
+
+  <!-- 01 Frame -->
+  <section class="panel" id="p-frame" role="tabpanel" aria-labelledby="tab-frame">
+    <div class="panel-head">
+      <h2>Frame</h2>
+      <p class="muted">State the problem without a solution in it, then turn it into one "How might we" question.</p>
+    </div>
+    <div class="fields">
+      <div class="field wide"><label for="f-problem">Problem</label><textarea id="f-problem" rows="4"></textarea><small>Who hurts, how often, and what evidence you have.</small></div>
+      <div class="field wide"><label for="f-hmw">How might we</label><input type="text" id="f-hmw"></div>
+      <div class="field"><label for="f-users">Users</label><textarea id="f-users" rows="3"></textarea></div>
+      <div class="field"><label for="f-success">Success signal</label><textarea id="f-success" rows="3"></textarea><small>A number you could measure after launch.</small></div>
+      <div class="field"><label for="f-constraints">Constraints</label><textarea id="f-constraints" rows="4"></textarea><small>One per line.</small></div>
+      <div class="field">
+        <label for="f-appetite">Appetite</label>
+        <select id="f-appetite">
+          <option value="small">Small batch: 1 to 2 weeks</option>
+          <option value="big">Big batch: up to 6 weeks</option>
+          <option value="spike">Spike: 1 to 3 days, learning only</option>
+        </select>
+        <small>How much time the idea is worth, decided before solutions (Shape Up).</small>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 Diverge -->
+  <section class="panel" id="p-diverge" role="tabpanel" aria-labelledby="tab-diverge" hidden>
+    <div class="panel-head">
+      <h2>Diverge</h2>
+      <p class="muted">Aim for quantity. Add your own ideas next to the agent's; judging happens in the next stage.</p>
+    </div>
+    <div class="ideas" id="idea-grid"></div>
+    <form class="add" id="add-form">
+      <h3>Add an idea</h3>
+      <div class="fields">
+        <div class="field"><label for="new-title">Title</label><input type="text" id="new-title" required></div>
+        <div class="field"><label for="new-tags">Tags</label><input type="text" id="new-tags" placeholder="cart, account"></div>
+        <div class="field wide"><label for="new-pitch">One-sentence pitch</label><input type="text" id="new-pitch"></div>
+      </div>
+      <div class="row"><button class="btn primary" type="submit">Add idea</button></div>
+    </form>
+  </section>
+
+  <!-- 03 Converge -->
+  <section class="panel" id="p-converge" role="tabpanel" aria-labelledby="tab-converge" hidden>
+    <div class="panel-head">
+      <h2>Converge</h2>
+      <p class="muted">Spend dots on favorites, then score each idea from 1 to 5. ICE = impact × confidence × ease, where ease = 6 − effort.</p>
+    </div>
+    <div class="row">
+      <label for="c-voters">Voters</label>
+      <input type="number" id="c-voters" min="1" max="20" style="width:5rem">
+      <span class="budget" id="budget"></span>
+    </div>
+    <div class="converge">
+      <div class="score-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Idea</th><th>Dots</th><th>Impact</th><th>Effort</th><th>Conf.</th><th>ICE</th></tr></thead>
+          <tbody id="score-body"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <div class="label" style="margin-bottom:6px">Impact / effort</div>
+          <svg class="matrix" id="matrix" viewBox="0 0 440 320" role="img" aria-label="Impact versus effort matrix"></svg>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom:6px">Ranking by ICE</div>
+          <ol class="rank" id="rank"></ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 Decide -->
+  <section class="panel" id="p-decide" role="tabpanel" aria-labelledby="tab-decide" hidden>
+    <div class="panel-head">
+      <h2>Decide</h2>
+      <p class="muted">Choose one direction and say why. Every rejected idea gets a reason, so the spec does not reopen it.</p>
+    </div>
+    <div class="decide">
+      <div>
+        <div class="field"><span class="label">Direction</span><div class="options" id="d-options"></div></div>
+        <div class="field"><label for="d-why">Why this one</label><textarea id="d-why" rows="3"></textarea></div>
+        <div class="field"><span class="label">Rejected, and why</span><div class="rejects" id="d-rejects"></div></div>
+        <div class="field"><label for="d-questions">Open questions for Clarify</label><textarea id="d-questions" rows="3"></textarea><small>One per line.</small></div>
+        <div class="field"><label for="d-risks">Risks</label><textarea id="d-risks" rows="2"></textarea><small>One per line.</small></div>
+      </div>
+      <div>
+        <div class="field"><span class="label">brainstorm.md preview</span><pre id="md"></pre></div>
+        <div class="row">
+          <button class="btn primary" type="button" id="b-copy">Copy brainstorm.md</button>
+          <button class="btn" type="button" id="b-dl-md">Download .md</button>
+          <button class="btn" type="button" id="b-dl-json">Download state .json</button>
+          <button class="btn danger" type="button" id="b-reset">Reset board</button>
+        </div>
+        <div class="toast" id="toast" role="status"></div>
+        <p class="note">Save the file as <span class="mono">brainstorms/&lt;slug&gt;/brainstorm.md</span>, or paste it to the agent. Downloads work when this page is opened from disk.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var seed = JSON.parse(document.getElementById("seed").textContent);
+  var KEY = "brainstorm:" + seed.id;
+  var S = load() || clone(seed);
+  S.decision = S.decision || { chosen: null, combine: [], why: "", rejected: {} };
+  S.decision.rejected = S.decision.rejected || {};
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function load() { try { var v = localStorage.getItem(KEY); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+  function $(id) { return document.getElementById(id); }
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      if (k === "text") n.textContent = attrs[k];
+      else if (k.indexOf("on") === 0) n.addEventListener(k.slice(2), attrs[k]);
+      else n.setAttribute(k, attrs[k]);
+    });
+    (kids || []).forEach(function (c) { if (c) n.appendChild(c); });
+    return n;
+  }
+  function lines(s) { return (s || "").split("\n").map(function (x) { return x.trim(); }).filter(Boolean); }
+  function ice(i) { return i.impact * i.confidence * (6 - i.effort); }
+  function numOf(i) { return S.ideas.indexOf(i) + 1; }
+  function budget() { return Math.max(1, S.voters || 1) * Math.max(1, Math.ceil(S.ideas.length / 3)); }
+  function used() { return S.ideas.reduce(function (a, i) { return a + (i.votes || 0); }, 0); }
+  function byId(id) { return S.ideas.filter(function (i) { return i.id === id; })[0]; }
+  function ranked() { return S.ideas.slice().sort(function (a, b) { return ice(b) - ice(a) || b.votes - a.votes; }); }
+
+  /* Header */
+  $("h-id").textContent = "BRN-" + S.id;
+  $("h-spec").textContent = S.spec ? "feeds " + S.spec : "feeds the next spec";
+  $("h-date").textContent = S.date || "";
+  $("h-title").textContent = S.title;
+  $("h-example").hidden = !S.example;
+
+  /* Tabs */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".stage"));
+  function show(stage) {
+    tabs.forEach(function (t) {
+      var on = t.dataset.stage === stage;
+      t.setAttribute("aria-selected", String(on));
+      t.tabIndex = on ? 0 : -1;
+      $("p-" + t.dataset.stage).hidden = !on;
+    });
+    if (stage === "decide") renderDecide();
+    try { sessionStorage.setItem(KEY + ":tab", stage); } catch (e) {}
+  }
+  tabs.forEach(function (t, idx) {
+    t.addEventListener("click", function () { show(t.dataset.stage); });
+    t.addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      var next = tabs[(idx + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+      next.focus(); show(next.dataset.stage);
+    });
+  });
+
+  /* 01 Frame */
+  [["f-problem", "problem"], ["f-hmw", "hmw"], ["f-users", "users"], ["f-success", "success"], ["f-constraints", "constraints"], ["f-appetite", "appetite"]].forEach(function (p) {
+    var input = $(p[0]);
+    input.value = S.frame[p[1]] || "";
+    input.addEventListener("input", function () { S.frame[p[1]] = input.value; changed(); });
+  });
+
+  /* 02 Diverge */
+  function renderIdeas() {
+    var grid = $("idea-grid");
+    grid.textContent = "";
+    S.ideas.forEach(function (i) {
+      var removeBtn = el("button", { class: "btn danger", type: "button", text: "Remove" });
+      removeBtn.addEventListener("click", function () {
+        if (removeBtn.dataset.armed) {
+          S.ideas = S.ideas.filter(function (x) { return x !== i; });
+          if (S.decision.chosen === i.id) S.decision.chosen = null;
+          delete S.decision.rejected[i.id];
+          structural();
+        } else {
+          removeBtn.dataset.armed = "1";
+          removeBtn.textContent = "Confirm remove";
+        }
+      });
+      grid.appendChild(el("article", { class: "idea" }, [
+        el("div", { class: "idea-top" }, [el("span", { class: "num", text: "#" + numOf(i) }), el("span", { class: "by", text: "by " + i.by })]),
+        el("h3", { text: i.title }),
+        i.pitch ? el("p", { text: i.pitch }) : null,
+        el("div", { class: "tags" }, (i.tags || []).map(function (t) { return el("span", { class: "tag", text: t }); })),
+        removeBtn
+      ]));
+    });
+  }
+  $("add-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var title = $("new-title").value.trim();
+    if (!title) return;
+    S.ideas.push({
+      id: "u" + Date.now().toString(36), title: title, pitch: $("new-pitch").value.trim(),
+      tags: $("new-tags").value.split(",").map(function (t) { return t.trim(); }).filter(Boolean),
+      by: "you", votes: 0, impact: 3, effort: 3, confidence: 3
+    });
+    $("new-title").value = ""; $("new-pitch").value = ""; $("new-tags").value = "";
+    structural();
+    $("new-title").focus();
+  });
+
+  /* 03 Converge */
+  $("c-voters").value = S.voters || 1;
+  $("c-voters").addEventListener("input", function () {
+    var v = parseInt($("c-voters").value, 10);
+    if (v >= 1) { S.voters = v; changed(); }
+  });
+
+  function scoreSelect(i, key) {
+    var s = el("select", { "aria-label": key + " for " + i.title });
+    for (var v = 1; v <= 5; v++) s.appendChild(el("option", { value: String(v), text: String(v) }));
+    s.value = String(i[key]);
+    s.addEventListener("change", function () { i[key] = parseInt(s.value, 10); changed(); });
+    return s;
+  }
+  function renderConverge() {
+    var body = $("score-body");
+    body.textContent = "";
+    S.ideas.forEach(function (i) {
+      var count = el("span", { class: "mono", text: String(i.votes) });
+      var minus = el("button", { class: "btn", type: "button", "aria-label": "Remove a dot from " + i.title, text: "−" });
+      var plus = el("button", { class: "btn", type: "button", "aria-label": "Add a dot to " + i.title, text: "+" });
+      minus.addEventListener("click", function () { if (i.votes > 0) { i.votes--; changed(); } });
+      plus.addEventListener("click", function () { if (used() < budget()) { i.votes++; changed(); } });
+      var tr = el("tr", { "data-id": i.id }, [
+        el("td", {}, [el("span", { class: "num", text: "#" + numOf(i) })]),
+        el("td", { text: i.title }),
+        el("td", {}, [el("span", { class: "stepper" }, [minus, count, plus])]),
+        el("td", {}, [scoreSelect(i, "impact")]),
+        el("td", {}, [scoreSelect(i, "effort")]),
+        el("td", {}, [scoreSelect(i, "confidence")]),
+        el("td", { class: "ice" })
+      ]);
+      tr._refs = { count: count, minus: minus, plus: plus, ice: tr.lastChild };
+      body.appendChild(tr);
+    });
+  }
+  function refreshConverge() {
+    var b = budget(), u = used();
+    var bud = $("budget");
+    bud.textContent = "";
+    bud.appendChild(el("b", { text: String(b - u) }));
+    bud.appendChild(document.createTextNode(" of " + b + " dots left"));
+    bud.classList.toggle("over", u > b);
+    Array.prototype.forEach.call($("score-body").children, function (tr) {
+      var i = byId(tr.dataset.id), r = tr._refs;
+      r.count.textContent = String(i.votes);
+      r.minus.disabled = i.votes === 0;
+      r.plus.disabled = u >= b;
+      r.ice.textContent = String(ice(i));
+    });
+    drawMatrix();
+    var rank = $("rank");
+    rank.textContent = "";
+    ranked().forEach(function (i) {
+      rank.appendChild(el("li", {}, [
+        el("span", { class: "num", text: "#" + numOf(i) }),
+        el("div", {}, [el("div", { text: i.title }), el("div", { class: "bar" }, [el("i", { style: "width:" + (ice(i) / 125 * 100).toFixed(1) + "%" })])]),
+        el("span", { class: "ice", text: String(ice(i)) })
+      ]));
+    });
+  }
+
+  var SVG = "http://www.w3.org/2000/svg";
+  function svg(tag, attrs, text) {
+    var n = document.createElementNS(SVG, tag);
+    Object.keys(attrs).forEach(function (k) { n.setAttribute(k, attrs[k]); });
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function drawMatrix() {
+    var m = $("matrix"), L = 48, R = 424, T = 14, B = 278;
+    var x = function (v) { return L + (v - 1) / 4 * (R - L); };
+    var y = function (v) { return B - (v - 1) / 4 * (B - T); };
+    m.textContent = "";
+    m.appendChild(svg("rect", { class: "quickwin-bg", x: L, y: T, width: x(3) - L, height: y(3) - T }));
+    m.appendChild(svg("rect", { class: "grid", x: L, y: T, width: R - L, height: B - T }));
+    m.appendChild(svg("line", { class: "divider", x1: x(3), y1: T, x2: x(3), y2: B }));
+    m.appendChild(svg("line", { class: "divider", x1: L, y1: y(3), x2: R, y2: y(3) }));
+    m.appendChild(svg("text", { class: "quad win", x: L + 8, y: T + 16 }, "Quick wins"));
+    m.appendChild(svg("text", { class: "quad", x: R - 8, y: T + 16, "text-anchor": "end" }, "Big bets"));
+    m.appendChild(svg("text", { class: "quad", x: L + 8, y: B - 8 }, "Fillers"));
+    m.appendChild(svg("text", { class: "quad", x: R - 8, y: B - 8, "text-anchor": "end" }, "Money pits"));
+    for (var v = 1; v <= 5; v++) {
+      m.appendChild(svg("text", { class: "axis", x: x(v), y: B + 16, "text-anchor": "middle" }, String(v)));
+      m.appendChild(svg("text", { class: "axis", x: L - 10, y: y(v) + 3, "text-anchor": "end" }, String(v)));
+    }
+    m.appendChild(svg("text", { class: "axis", x: (L + R) / 2, y: B + 36, "text-anchor": "middle" }, "EFFORT →"));
+    m.appendChild(svg("text", { class: "axis", x: 12, y: (T + B) / 2, "text-anchor": "middle", transform: "rotate(-90 12 " + (T + B) / 2 + ")" }, "IMPACT →"));
+    var buckets = {};
+    S.ideas.forEach(function (i) { var k = i.effort + ":" + i.impact; (buckets[k] = buckets[k] || []).push(i); });
+    Object.keys(buckets).forEach(function (k) {
+      var list = buckets[k];
+      list.forEach(function (i, n) {
+        var cx = x(i.effort) + (n - (list.length - 1) / 2) * 26;
+        cx = Math.min(R - 14, Math.max(L + 14, cx));
+        var cy = Math.min(B - 14, Math.max(T + 14, y(i.impact)));
+        var g = svg("g", { class: "pt" + (S.decision.chosen === i.id ? " chosen" : "") });
+        g.appendChild(svg("title", {}, "#" + numOf(i) + " " + i.title));
+        g.appendChild(svg("circle", { cx: cx, cy: cy, r: 12 }));
+        g.appendChild(svg("text", { x: cx, y: cy }, String(numOf(i))));
+        m.appendChild(g);
+      });
+    });
+  }
+
+  /* 04 Decide */
+  $("d-why").value = S.decision.why || "";
+  $("d-why").addEventListener("input", function () { S.decision.why = $("d-why").value; changed(); });
+  $("d-questions").value = S.questions || "";
+  $("d-questions").addEventListener("input", function () { S.questions = $("d-questions").value; changed(); });
+  $("d-risks").value = S.risks || "";
+  $("d-risks").addEventListener("input", function () { S.risks = $("d-risks").value; changed(); });
+
+  function renderDecide() {
+    var box = $("d-options");
+    box.textContent = "";
+    ranked().forEach(function (i) {
+      var radio = el("input", { type: "radio", name: "chosen", id: "opt-" + i.id, value: i.id });
+      radio.checked = S.decision.chosen === i.id;
+      radio.addEventListener("change", function () { S.decision.chosen = i.id; renderRejects(); changed(); });
+      box.appendChild(el("label", { class: "option", for: "opt-" + i.id }, [
+        radio, el("span", { class: "num", text: "#" + numOf(i) }), el("span", { text: i.title }), el("span", { class: "ice", text: "ICE " + ice(i) })
+      ]));
+    });
+    renderRejects();
+  }
+  function renderRejects() {
+    var box = $("d-rejects");
+    box.textContent = "";
+    var others = S.ideas.filter(function (i) { return i.id !== S.decision.chosen; });
+    if (!S.decision.chosen) { box.appendChild(el("p", { class: "note", text: "Choose a direction first." })); return; }
+    others.forEach(function (i) {
+      var input = el("input", { type: "text", id: "rej-" + i.id, "aria-label": "Reason for rejecting " + i.title, placeholder: "Reason" });
+      input.value = S.decision.rejected[i.id] || "";
+      input.addEventListener("input", function () { S.decision.rejected[i.id] = input.value; changed(); });
+      box.appendChild(el("div", { class: "reject" }, [el("span", { text: "#" + numOf(i) + " " + i.title }), input]));
+    });
+  }
+
+  var APPETITE = { small: "Small batch (1–2 weeks)", big: "Big batch (up to 6 weeks)", spike: "Spike (1–3 days)" };
+  function markdown() {
+    var f = S.frame, chosen = byId(S.decision.chosen);
+    var out = [
+      "---",
+      "id: BRN-" + S.id,
+      "spec: " + (S.spec || "pending"),
+      "date: " + (S.date || ""),
+      "status: " + (chosen && S.decision.why.trim() ? "decided" : "open"),
+      "appetite: " + (f.appetite || ""),
+      "---",
+      "",
+      "# Brainstorm: " + S.title,
+      "",
+      "## Problem",
+      (f.problem || "").trim(),
+      "",
+      "## How might we",
+      (f.hmw || "").trim(),
+      "",
+      "## Users",
+      (f.users || "").trim(),
+      "",
+      "## Constraints"
+    ];
+    lines(f.constraints).forEach(function (c) { out.push("- " + c); });
+    out.push("", "## Success signal", (f.success || "").trim(), "", "## Appetite", APPETITE[f.appetite] || "", "");
+    out.push("## Options considered", "", "| # | Idea | Dots | Impact | Effort | Confidence | ICE |", "|---|------|------|--------|--------|------------|-----|");
+    ranked().forEach(function (i) {
+      out.push("| " + numOf(i) + " | " + i.title.replace(/\|/g, "\\|") + " | " + i.votes + " | " + i.impact + " | " + i.effort + " | " + i.confidence + " | " + ice(i) + " |");
+    });
+    out.push("", "## Decision");
+    if (chosen) {
+      out.push("Chosen: **#" + numOf(chosen) + " " + chosen.title + "**", "", chosen.pitch || "", "", "Why: " + ((S.decision.why || "").trim() || "_not written yet_"));
+    } else {
+      out.push("_No direction chosen yet._");
+    }
+    out.push("", "## Rejected alternatives");
+    S.ideas.filter(function (i) { return i.id !== S.decision.chosen; }).forEach(function (i) {
+      var r = (S.decision.rejected[i.id] || "").trim();
+      out.push("- #" + numOf(i) + " " + i.title + ": " + (r || "_no reason given_"));
+    });
+    out.push("", "## Open questions for Clarify");
+    lines(S.questions).forEach(function (q) { out.push("- [ ] " + q); });
+    out.push("", "## Risks");
+    lines(S.risks).forEach(function (q) { out.push("- " + q); });
+    out.push("", "## Next", "Save as `brainstorms/" + S.id + "/brainstorm.md`, then run `/speckit.specify` with this file as input.", "");
+    return out.join("\n");
+  }
+
+  /* Stage completion shown on the tabs */
+  function stageDone() {
+    var d = S.decision, chosen = byId(d.chosen);
+    return {
+      frame: !!((S.frame.problem || "").trim() && (S.frame.hmw || "").trim()),
+      diverge: S.ideas.length >= 3,
+      converge: used() > 0,
+      decide: !!(chosen && (d.why || "").trim())
+    };
+  }
+  function refreshStages() {
+    var done = stageDone();
+    tabs.forEach(function (t) {
+      var ok = done[t.dataset.stage];
+      t.dataset.done = String(ok);
+      t.querySelector(".state").textContent = ok ? "done" : "open";
+    });
+  }
+
+  function changed() {
+    save();
+    refreshConverge();
+    refreshStages();
+    $("md").textContent = markdown();
+  }
+  function structural() {
+    renderIdeas();
+    renderConverge();
+    if (!$("p-decide").hidden) renderDecide();
+    changed();
+  }
+
+  /* Export */
+  function toast(msg) { $("toast").textContent = msg; setTimeout(function () { $("toast").textContent = ""; }, 2400); }
+  function selectPre() {
+    var r = document.createRange(); r.selectNodeContents($("md"));
+    var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    toast("Clipboard unavailable. The text is selected; press Ctrl+C.");
+  }
+  $("b-copy").addEventListener("click", function () {
+    var text = markdown();
+    try { navigator.clipboard.writeText(text).then(function () { toast("Copied brainstorm.md"); }, selectPre); }
+    catch (e) { selectPre(); }
+  });
+  function download(name, text, type) {
+    var a = el("a", { href: URL.createObjectURL(new Blob([text], { type: type })), download: name });
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  $("b-dl-md").addEventListener("click", function () { download("brainstorm.md", markdown(), "text/markdown"); });
+  $("b-dl-json").addEventListener("click", function () { download("brainstorm.json", JSON.stringify(S, null, 2), "application/json"); });
+  var resetBtn = $("b-reset");
+  resetBtn.addEventListener("click", function () {
+    if (!resetBtn.dataset.armed) { resetBtn.dataset.armed = "1"; resetBtn.textContent = "Confirm reset"; return; }
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    location.reload();
+  });
+
+  /* Boot */
+  renderIdeas();
+  renderConverge();
+  changed();
+  var startTab = "frame";
+  try { startTab = sessionStorage.getItem(KEY + ":tab") || "frame"; } catch (e) {}
+  show(startTab);
+})();
+</script>
