@@ -31,6 +31,13 @@ wording or tooling without changing what a rule requires.
 - Brainstorm board: all stages showed at once when opened from disk, and direction options
   rendered as uppercase labels.
 
+### Fixed
+
+- `no-bypass.sh` reads the branch where the commit or push runs (a `cd <dir>` or `git -C
+  <dir>` before it, else the hook payload's `cwd`), not always the project folder. A commit
+  on a branch in a worktree outside the project was blocked as a commit on `main` whenever
+  the project folder itself stayed on `main`.
+
 ### Planned
 
 - `dev-standard init` and `sync`.

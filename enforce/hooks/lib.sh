@@ -27,6 +27,29 @@ ds_read_input() {
 # ds_field <jq-filter>: a field of the hook payload, empty when missing.
 ds_field() { jq -r "$1 // empty" <<<"$DS_INPUT"; }
 
+# ds_git_dir: the directory a shell command's git commit or push runs in. Agents often work
+# in a git worktree outside the project folder (the folder may serve a live app and stay on
+# main), reached with `cd <dir> && git commit` or `git -C <dir> commit`. Reading the branch
+# of the project folder there blocks every commit on the worktree's branch. So: start from
+# the payload's cwd (else the project root) and follow each `cd` or `-C` directory before the
+# first git commit/push, in order, the way the shell would. A directory that doesn't resolve
+# (a shell variable, a typo) is skipped, so an unreadable command stays where it started and
+# the check still applies there.
+ds_git_dir() {
+  local cmd dir head candidate next
+  cmd=$(ds_field '.tool_input.command')
+  dir=$(ds_field '.cwd')
+  [[ -n "$dir" && -d "$dir" ]] || dir="$DS_ROOT"
+  head=$(awk 'match($0, /git[ \t]+(commit|push)/) { print substr($0, 1, RSTART - 1); exit } { print }' <<<"$cmd")
+  while IFS= read -r candidate; do
+    candidate=$(sed -E "s/^.*(cd|-C)[[:space:]]+//; s/^[\"']//; s/[\"']\$//" <<<"$candidate")
+    if next=$(cd "$dir" 2>/dev/null && cd "$candidate" 2>/dev/null && pwd); then
+      dir="$next"
+    fi
+  done < <(grep -oE "(^|[[:space:];&|(])(cd|-C)[[:space:]]+(\"[^\"]*\"|'[^']*'|[^[:space:];&|)]+)" <<<"$head" || true)
+  printf '%s' "$dir"
+}
+
 # ds_rel_path: the tool's target file, relative to the project root.
 ds_rel_path() {
   local file
