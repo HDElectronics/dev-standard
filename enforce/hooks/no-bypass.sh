@@ -8,7 +8,7 @@ ds_read_input
 
 cmd=$(ds_field '.tool_input.command')
 [[ -n "$cmd" ]] || exit 0
-branch=$(git -C "$DS_ROOT" branch --show-current 2>/dev/null || true)
+branch=$(git -C "$(ds_git_dir)" branch --show-current 2>/dev/null || true)
 
 if grep -qE -- '--no-verify|(^|[[:space:]])(HUSKY|LEFTHOOK)=0' <<<"$cmd" \
    || grep -qE 'git[[:space:]]+commit([[:space:]]+[^|;&]*)?[[:space:]]-[a-zA-Z]*n' <<<"$cmd"; then

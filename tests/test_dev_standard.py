@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -175,6 +176,35 @@ class NoBypassTest(HookCase):
     def test_blocks_commit_on_main(self) -> None:
         self.repo.git("checkout", "-q", "main")
         self.assert_blocked("git commit -m 'feat: x'", "GIT-005")
+
+    def worktree(self, *options: str, ref: str = "") -> str:
+        """A worktree outside the project folder, as an agent uses when the folder stays on main."""
+        parent = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, parent, ignore_errors=True)
+        path = Path(parent) / "wt"
+        self.repo.git("worktree", "add", "-q", *options, str(path), *([ref] if ref else []))
+        return path.as_posix()
+
+    def test_allows_commit_in_worktree_branch_while_project_is_on_main(self) -> None:
+        self.repo.git("checkout", "-q", "main")
+        wt = self.worktree("-b", "chore/news")
+        self.assert_allowed(f'cd "{wt}" && git add -A && git commit -m "chore: x"')
+        self.assert_allowed(f"git -C {wt} commit -m 'chore: x'")
+        self.assert_allowed(f'cd "{self.repo.path.as_posix()}"; cd "{wt}" && git commit -m "chore: x"')
+        payload = self.bash("git commit -m 'chore: x'")
+        payload["cwd"] = wt
+        result = self.hook("no-bypass.sh", payload)
+        self.assertEqual((result.returncode, result.stdout), (0, ""))
+
+    def test_blocks_commit_in_worktree_on_main(self) -> None:
+        wt = self.worktree(ref="main")
+        self.assert_blocked(f'cd "{wt}" && git commit -m "chore: x"', "GIT-005")
+        self.assert_blocked(f'cd "{self.repo.path.as_posix()}" && cd "{wt}" && git commit -m "chore: x"', "GIT-005")
+
+    def test_unknown_directory_falls_back_to_project(self) -> None:
+        self.repo.git("checkout", "-q", "main")
+        self.assert_blocked('cd "$W" && git commit -m "chore: x"', "GIT-005")
+        self.assert_blocked("grep -C 3 x f; git commit -m 'chore: x'", "GIT-005")
 
     def test_blocks_admin_merge(self) -> None:
         self.assert_blocked("gh pr merge 12 --squash --admin", "BRA-011")
